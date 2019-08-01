@@ -1,5 +1,5 @@
 {
-  "name": "reactopy-python-interface",
+  "name": "reactopy",
   "version": "0.1.0",
   "description": "Python interface for Reactopy widgets",
   "author": "Jeremy Magland",
