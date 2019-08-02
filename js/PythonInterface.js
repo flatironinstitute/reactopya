@@ -65,6 +65,7 @@ export default class PythonInterface {
         this._reactComponent.setState(state0);
     }
     start() {
+        console.info(`Starting python interface for ${this._reactComponent.constructor.name}`)
         if (window.using_electron) {
             if (this._process) return;
             this._process = new CompanionProcess(this._pythonModuleName, this._pythonComponentName);
