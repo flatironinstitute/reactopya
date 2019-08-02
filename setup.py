@@ -1,6 +1,6 @@
 import setuptools
 
-pkg_name = "reactopy"
+pkg_name = "reactopya"
 
 setuptools.setup(
     name=pkg_name,
