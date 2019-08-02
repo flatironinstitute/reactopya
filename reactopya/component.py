@@ -14,7 +14,7 @@ class Component:
         self._quit = False
 
     @abstractmethod
-    def on_javascript_state_changed(self, prev_state, new_state):
+    def javascript_state_changed(self, prev_state, new_state):
         pass
 
     def set_python_state(self, state):
@@ -32,7 +32,7 @@ class Component:
         self.original_stdout = sys.stdout
         sys.stdout = sys.stderr
         iterate_timeout = 1
-        self.on_javascript_state_changed(deepcopy(self._javascript_state), deepcopy(self._javascript_state))
+        self.javascript_state_changed(deepcopy(self._javascript_state), deepcopy(self._javascript_state))
         while True:
             self._flush_all()
             stdin_available = select.select([sys.stdin], [], [], iterate_timeout)[0]
@@ -80,7 +80,7 @@ class Component:
             prev_javascript_state = deepcopy(self._javascript_state)
             for key in changed_state:
                 self._javascript_state[key] = changed_state[key]
-            self.on_javascript_state_changed(prev_javascript_state, deepcopy(self._javascript_state))
+            self.javascript_state_changed(prev_javascript_state, deepcopy(self._javascript_state))
 
     # internal function to send message to javascript component
     def _send_message(self, msg):

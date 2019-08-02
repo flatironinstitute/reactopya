@@ -8,13 +8,15 @@ import numpy as np
 
 class Component:
     def __init__(self):
-        self._manager = None
         self._python_state = dict()
         self._javascript_state = dict()
         self._quit = False
+        self._mode = 'process' # process, jupyter
+        self._python_state_changed_handlers = []
+        self._javascript_state_changed_handlers = []
 
     @abstractmethod
-    def on_javascript_state_changed(self, prev_state, new_state):
+    def javascript_state_changed(self, prev_state, new_state):
         pass
 
     def set_python_state(self, state):
@@ -25,14 +27,23 @@ class Component:
         if changed_state:
             for key in changed_state:
                 self._python_state[key] = changed_state[key]
-            msg = {"name": "setPythonState", "state": _json_serialize(changed_state)}
-            self._send_message(msg)
+            if self._mode == 'process':
+                msg = {"name": "setPythonState", "state": _json_serialize(changed_state)}
+                self._send_message(msg)
+            for handler in self._python_state_changed_handlers:
+                handler()
+
+    def on_python_state_changed(self, handler):
+        self._python_state_changed_handlers.append(handler)
+
+    def on_javascript_state_changed(self, handler):
+        self._javascript_state_changed_handlers.append(handler)
     
     def run_process_mode(self):
         self.original_stdout = sys.stdout
         sys.stdout = sys.stderr
         iterate_timeout = 1
-        self.on_javascript_state_changed(deepcopy(self._javascript_state), deepcopy(self._javascript_state))
+        self.javascript_state_changed(deepcopy(self._javascript_state), deepcopy(self._javascript_state))
         while True:
             self._flush_all()
             stdin_available = select.select([sys.stdin], [], [], iterate_timeout)[0]
@@ -54,8 +65,8 @@ class Component:
     def get_javascript_state(self, key):
         return deepcopy(self._javascript_state.get(key))
 
-    def get_python_state(self, key):
-        return deepcopy(self._python_state.get(key))
+    def get_python_state(self, key, default_val):
+        return deepcopy(self._python_state.get(key, default_val))
 
     def iterate(self):
         pass
@@ -80,21 +91,20 @@ class Component:
             prev_javascript_state = deepcopy(self._javascript_state)
             for key in changed_state:
                 self._javascript_state[key] = changed_state[key]
-            self.on_javascript_state_changed(prev_javascript_state, deepcopy(self._javascript_state))
+            self.javascript_state_changed(prev_javascript_state, deepcopy(self._javascript_state))
 
     # internal function to send message to javascript component
     def _send_message(self, msg):
         print(json.dumps(msg), file=self.original_stdout)
         self._flush_all()
 
-    def _set_manager(self, manager):
-        self._manager = manager
-        manager.onJavaScriptStateChanged(self._handle_javascript_state_changed)
-
     def _flush_all(self):
         self.original_stdout.flush()
         sys.stdout.flush()
         sys.stderr.flush()
+
+    def _set_mode(self, mode):
+        self._mode = mode
 
 
 def _different(a, b):
