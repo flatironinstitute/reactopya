@@ -8,10 +8,12 @@ import numpy as np
 
 class Component:
     def __init__(self):
-        self._manager = None
         self._python_state = dict()
+        self._python_state_changed_handlers = []
         self._javascript_state = dict()
         self._quit = False
+        self._running_process = False
+        self._jupyter_mode = False
 
     @abstractmethod
     def javascript_state_changed(self, prev_state, new_state):
@@ -21,18 +23,22 @@ class Component:
         changed_state = dict()
         for key in state:
             if _different(state[key], self._python_state.get(key)):
-                changed_state[key] = deepcopy(state[key])
+                changed_state[key] = _json_serialize(state[key])
         if changed_state:
             for key in changed_state:
                 self._python_state[key] = changed_state[key]
-            msg = {"name": "setPythonState", "state": _json_serialize(changed_state)}
-            self._send_message(msg)
+            if self._running_process:
+                msg = {"name": "setPythonState", "state": changed_state}
+                self._send_message(msg)
+            for handler in self._python_state_changed_handlers:
+                handler()
     
     def run_process_mode(self):
+        self._running_process = True
         self.original_stdout = sys.stdout
         sys.stdout = sys.stderr
         iterate_timeout = 1
-        self.javascript_state_changed(deepcopy(self._javascript_state), deepcopy(self._javascript_state))
+        self._initial_update()
         while True:
             self._flush_all()
             stdin_available = select.select([sys.stdin], [], [], iterate_timeout)[0]
@@ -50,15 +56,25 @@ class Component:
             if self._quit:
                 break
             time.sleep(0.01)
+
+    def init_jupyter(self):
+        self._jupyter_mode = True
+        self._initial_update()
     
     def get_javascript_state(self, key):
         return deepcopy(self._javascript_state.get(key))
 
-    def get_python_state(self, key):
-        return deepcopy(self._python_state.get(key))
+    def get_python_state(self, key, default_val):
+        return deepcopy(self._python_state.get(key, default_val))
 
     def iterate(self):
         pass
+
+    def on_python_state_changed(self, handler):
+        self._python_state_changed_handlers.append(handler)
+
+    def _initial_update(self):
+        self.javascript_state_changed(deepcopy(self._javascript_state), deepcopy(self._javascript_state))
 
     # internal function to handle incoming message (coming from javascript component)
     def _handle_message(self, msg):
@@ -87,10 +103,6 @@ class Component:
         print(json.dumps(msg), file=self.original_stdout)
         self._flush_all()
 
-    def _set_manager(self, manager):
-        self._manager = manager
-        manager.onJavaScriptStateChanged(self._handle_javascript_state_changed)
-
     def _flush_all(self):
         self.original_stdout.flush()
         sys.stdout.flush()
@@ -101,10 +113,28 @@ def _different(a, b):
     return a is not b
 
 def _listify_ndarray(x):
-    if np.issubdtype(x.dtype, np.integer):
-        return [int(val) for val in x]
+    if x.ndim == 1:
+        if np.issubdtype(x.dtype, np.integer):
+            return [int(val) for val in x]
+        else:
+            return [float(val) for val in x]
+    elif x.ndim == 2:
+        ret = []
+        for j in range(x.shape[1]):
+            ret.append(_listify_ndarray(x[:, j]))
+        return ret
+    elif x.ndim == 3:
+        ret = []
+        for j in range(x.shape[2]):
+            ret.append(_listify_ndarray(x[:, :, j]))
+        return ret
+    elif x.ndim == 4:
+        ret = []
+        for j in range(x.shape[3]):
+            ret.append(_listify_ndarray(x[:, :, :, j]))
+        return ret
     else:
-        return [float(val) for val in x]
+        raise Exception('Cannot listify ndarray with {} dims.'.format(x.ndim))
 
 def _json_serialize(x):
     if isinstance(x, np.ndarray):

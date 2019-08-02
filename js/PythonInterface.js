@@ -31,12 +31,13 @@ class CompanionProcess {
 }
 
 
-class ReactopyaProcessPythonInterface {
+export default class PythonInterface {
     constructor(reactComponent, pythonModuleName, pythonComponentName) {
         this._reactComponent = reactComponent;
         this._pythonModuleName = pythonModuleName;
         this._pythonComponentName = pythonComponentName
         this._syncPythonStateToStateKeys = [];
+        this._syncStateToJavaScriptStateKeys = [];
         this._process = null;
         this._pythonState = {};
         this._javaScriptState = {};
@@ -44,25 +45,49 @@ class ReactopyaProcessPythonInterface {
     }
     syncPythonStateToState(keys) {
         this._syncPythonStateToStateKeys.push(...keys);
+        if (this._reactComponent.props.jupyterModel) {
+            let init_state0 = {};
+            for (let key of keys) {
+                this._reactComponent.props.jupyterModel.on(`change:${key}`, () => {this._handleJupyterPythonStateToState(key);}, this);
+                init_state0[key] = _json_parse(this._reactComponent.props.jupyterModel.get(key, null));
+            }
+            this._reactComponent.setState(init_state0);
+        }
+    }
+    syncStateToJavaScriptState(keys) {
+        this._syncStateToJavaScriptStateKeys.push(...keys);
+        this._copyStateToJavaScriptState();
+    }
+    _handleJupyterPythonStateToState = (key) => {
+        let state0 = {};
+        let val0 = _json_parse(this._reactComponent.props.jupyterModel.get(key, null));
+        state0[key] = val0;
+        this._reactComponent.setState(state0);
     }
     start() {
-        if (this._process) return;
-        this._process = new CompanionProcess(this._pythonModuleName, this._pythonComponentName);
-        this._process.onReceiveMessage(this._handleReceiveMessageFromProcess);
-        window.addEventListener('beforeunload', () => {
-            this.stop();
-            window.removeEventListener('beforeunload', this._cleanup); // remove the event handler for normal unmounting
-        });
-        if (Object.keys(this._pendingJavaScriptState).length > 0) {
-            this.setJavaScriptState(this._pendingJavaScriptState);
-            this._pendingJavaScriptState = {};
+        if (window.using_electron) {
+            if (this._process) return;
+            this._process = new CompanionProcess(this._pythonModuleName, this._pythonComponentName);
+            this._process.onReceiveMessage(this._handleReceiveMessageFromProcess);
+            window.addEventListener('beforeunload', () => {
+                this.stop();
+                window.removeEventListener('beforeunload', this._cleanup); // remove the event handler for normal unmounting
+            });
+            if (Object.keys(this._pendingJavaScriptState).length > 0) {
+                this.setJavaScriptState(this._pendingJavaScriptState);
+                this._pendingJavaScriptState = {};
+            }
         }
+        this.update();
     }
     stop() {
         this._cleanup();
     }
+    update() {
+        this._copyStateToJavaScriptState();
+    }
     setJavaScriptState(state) {
-        if (!this._process) {
+        if ((window.using_electron) && (!this._process)) {
             for (let key in state) {
                 this._pendingJavaScriptState[key] = state[key];
             }
@@ -76,10 +101,20 @@ class ReactopyaProcessPythonInterface {
             }
         }
         if (Object.keys(newJavaScriptState).length > 0) {
-            this._process.sendMessage({
-                name: 'setJavaScriptState',
-                state: newJavaScriptState
-            });
+            if (window.using_electron) {
+                this._process.sendMessage({
+                    name: 'setJavaScriptState',
+                    state: newJavaScriptState
+                });
+            }
+            else {
+                if (this._reactComponent.props.jupyterModel) {
+                    for (let key in newJavaScriptState) {
+                        this._reactComponent.props.jupyterModel.set(key, _json_stringify(newJavaScriptState[key]));
+                    }
+                    this._reactComponent.props.jupyterModel.save_changes();
+                }
+            }
         }
     }
     getJavaScriptState(key) {
@@ -97,9 +132,11 @@ class ReactopyaProcessPythonInterface {
     }
 
     _cleanup() {
-        if (!this._process) return;
-        this._process.close();
-        this._process = null;
+        if (window.using_electron) {
+            if (!this._process) return;
+            this._process.close();
+            this._process = null;
+        }
     }
 
     _handleReceiveMessageFromProcess = (msg) => {
@@ -126,6 +163,17 @@ class ReactopyaProcessPythonInterface {
         }
         this._reactComponent.setState(newState);
     }
+    _copyStateToJavaScriptState() {
+        let newState = {};
+        for (let key of this._syncStateToJavaScriptStateKeys) {
+            if (!compare(this.getJavaScriptState[key], this._reactComponent.state[key])) {
+                newState[key] = clone(this._reactComponent.state[key]);
+            }
+        }
+        if (Object.keys(newState).length > 0) {
+            this.setJavaScriptState(newState);
+        }
+    }
 }
 
 function compare(a, b) {
@@ -144,47 +192,21 @@ function clone(a) {
     return JSON.parse(stable_stringify(a));
 }
 
-export default class PythonInterface {
-    constructor(reactComponent, pythonModuleName, pythonComponentName) {
-        this._reactComponent = reactComponent;
-        this._syncStateToJavaScriptStateKeys = [];
-
-        this._impl = new ReactopyaProcessPythonInterface(reactComponent, pythonModuleName, pythonComponentName);
+function _json_parse(x) {
+    try {
+        return JSON.parse(x);
     }
-    syncPythonStateToState(keys) {
-        this._impl.syncPythonStateToState(keys);
-    }
-    syncStateToJavaScriptState(keys) {
-        this._syncStateToJavaScriptStateKeys.push(...keys);
-    }
-    start() {
-        this._impl.start();
-        this.update();
-    }
-    stop() {
-        this._impl.stop();
-    }
-    getJavaScriptState(key) {
-        return this._impl.getJavaScriptState(key);
-    }
-    getPythonState(key) {
-        return this._impl.getPythonState(key);
-    }
-    setJavaScriptState(state) {
-        this._impl.setJavaScriptState(state);
-    }
-    update() {
-        this._copyStateToJavaScriptState();
-    }
-    _copyStateToJavaScriptState() {
-        let newState = {};
-        for (let key of this._syncStateToJavaScriptStateKeys) {
-            if (!compare(this.getJavaScriptState[key], this._reactComponent.state[key])) {
-                newState[key] = clone(this._reactComponent.state[key]);
-            }
-        }
-        if (Object.keys(newState).length > 0) {
-            this.setJavaScriptState(newState);
-        }
+    catch(err) {
+        return null;
     }
 }
+
+function _json_stringify(x) {
+    try {
+        return JSON.stringify(x);
+    }
+    catch(err) {
+        return '';
+    }
+}
+
