@@ -26,4 +26,4 @@ yarn build
 
 ## Usage
 
-See the [reactopya_gallery](https://github.com/flatironinstitute/reactopya_gallery) project for a collection of example widgets.
+See the [reactopya_gallery](https://github.com/flatironinstitute/reactopya_gallery) project for a collection of example widgets. In fact, at the moment, the reactopya_gallery includes this repo as a git submodule.
