@@ -31,7 +31,7 @@ class CompanionProcess {
 }
 
 
-class ReactopyProcessPythonInterface {
+class ReactopyaProcessPythonInterface {
     constructor(reactComponent, pythonModuleName, pythonComponentName) {
         this._reactComponent = reactComponent;
         this._pythonModuleName = pythonModuleName;
@@ -149,7 +149,7 @@ export default class PythonInterface {
         this._reactComponent = reactComponent;
         this._syncStateToJavaScriptStateKeys = [];
 
-        this._impl = new ReactopyProcessPythonInterface(reactComponent, pythonModuleName, pythonComponentName);
+        this._impl = new ReactopyaProcessPythonInterface(reactComponent, pythonModuleName, pythonComponentName);
     }
     syncPythonStateToState(keys) {
         this._impl.syncPythonStateToState(keys);

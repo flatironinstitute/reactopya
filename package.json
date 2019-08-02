@@ -1,7 +1,7 @@
 {
-  "name": "reactopy",
+  "name": "reactopya",
   "version": "0.1.0",
-  "description": "Python interface for Reactopy widgets",
+  "description": "Python interface for Reactopya widgets",
   "author": "Jeremy Magland",
   "license": "Apache-2.0",
   "main": "dist/index.js",
