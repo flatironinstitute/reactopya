@@ -26,4 +26,4 @@ yarn build
 
 ## Usage
 
-See the reactopy-gallery project for a collection of example widgets.
+See the [reactopy_gallery](https://github.com/flatironinstitute/reactopy_gallery) project for a collection of example widgets. In fact, at the moment, the reactopy_gallery includes this repo as a git submodule.
