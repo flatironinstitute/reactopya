@@ -1,75 +1,33 @@
+import PythonProcess from './PythonProcess';
 const stable_stringify = require('json-stable-stringify');
 
-class CompanionProcess {
-    constructor(componentModule, componentName) {
-        this._pythonState = {};
-        this._javaScriptState = {};
-        this._receiveMessageHandlers = [];
-        let pythonCode = '';
-        pythonCode = pythonCode + `from ${componentModule} import ${componentName} as Component` + '\n\n'
-        pythonCode = pythonCode + `if __name__ == '__main__':` + '\n'
-        pythonCode = pythonCode + `  A = Component()` + '\n'
-        pythonCode = pythonCode + `  A.run_process_mode()` + '\n'
-        this._process = new window.ProcessRunner(pythonCode);
-        this._process.onReceiveMessage(this._handleProcessMessage);
-    }
-
-    sendMessage(msg) {
-        this._process.sendMessage(msg);
-    }
-    close() {
-        this._process.close();
-    }
-    onReceiveMessage(handler) {
-        this._receiveMessageHandlers.push(handler);
-    }
-    _handleProcessMessage = (msg) => {
-        this._receiveMessageHandlers.forEach((handler) => {
-            handler(msg);
-        })
-    }
-}
-
-
 export default class PythonInterface {
-    constructor(reactComponent, pythonModuleName, pythonComponentName) {
+    constructor(reactComponent, config) {
         this._reactComponent = reactComponent;
-        this._pythonModuleName = pythonModuleName;
-        this._pythonComponentName = pythonComponentName
-        this._syncPythonStateToStateKeys = [];
-        this._syncStateToJavaScriptStateKeys = [];
-        this._process = null;
+        this._pythonModuleName = config.pythonModuleName;
+        this._pythonComponentName = config.pythonComponentName;
+        this._syncPythonStateToStateKeys = config.pythonStateKeys;
+        this._syncStateToJavaScriptStateKeys = config.javaScriptStateKeys;
+        this._pythonProcess = null;
         this._pythonState = {};
         this._javaScriptState = {};
         this._pendingJavaScriptState = {};
     }
-    syncPythonStateToState(keys) {
-        this._syncPythonStateToStateKeys.push(...keys);
+    start() {
+        console.info(`Starting python interface for ${this._reactComponent.constructor.name}`)
         if (this._reactComponent.props.jupyterModel) {
             let init_state0 = {};
-            for (let key of keys) {
+            for (let key of this._syncPythonStateToStateKeys) {
                 this._reactComponent.props.jupyterModel.on(`change:${key}`, () => {this._handleJupyterPythonStateToState(key);}, this);
                 init_state0[key] = _json_parse(this._reactComponent.props.jupyterModel.get(key, null));
             }
             this._reactComponent.setState(init_state0);
         }
-    }
-    syncStateToJavaScriptState(keys) {
-        this._syncStateToJavaScriptStateKeys.push(...keys);
-        this._copyStateToJavaScriptState();
-    }
-    _handleJupyterPythonStateToState = (key) => {
-        let state0 = {};
-        let val0 = _json_parse(this._reactComponent.props.jupyterModel.get(key, null));
-        state0[key] = val0;
-        this._reactComponent.setState(state0);
-    }
-    start() {
-        console.info(`Starting python interface for ${this._reactComponent.constructor.name}`)
-        if (window.using_electron) {
-            if (this._process) return;
-            this._process = new CompanionProcess(this._pythonModuleName, this._pythonComponentName);
-            this._process.onReceiveMessage(this._handleReceiveMessageFromProcess);
+        else {
+            if (this._pythonProcess) return;
+            this._pythonProcess = new PythonProcess(this._pythonModuleName, this._pythonComponentName);
+            this._pythonProcess.onReceiveMessage(this._handleReceiveMessageFromProcess);
+            this._pythonProcess.start();
             window.addEventListener('beforeunload', () => {
                 this.stop();
                 window.removeEventListener('beforeunload', this._cleanup); // remove the event handler for normal unmounting
@@ -88,7 +46,7 @@ export default class PythonInterface {
         this._copyStateToJavaScriptState();
     }
     setJavaScriptState(state) {
-        if ((window.using_electron) && (!this._process)) {
+        if ((!this._reactComponent.props.jupyterModel) && (!this._pythonProcess)) {
             for (let key in state) {
                 this._pendingJavaScriptState[key] = state[key];
             }
@@ -102,19 +60,19 @@ export default class PythonInterface {
             }
         }
         if (Object.keys(newJavaScriptState).length > 0) {
-            if (window.using_electron) {
-                this._process.sendMessage({
-                    name: 'setJavaScriptState',
-                    state: newJavaScriptState
-                });
-            }
-            else {
+            if (this._reactComponent.props.jupyterModel) {
                 if (this._reactComponent.props.jupyterModel) {
                     for (let key in newJavaScriptState) {
                         this._reactComponent.props.jupyterModel.set(key, _json_stringify(newJavaScriptState[key]));
                     }
                     this._reactComponent.props.jupyterModel.save_changes();
                 }
+            }
+            else {
+                this._pythonProcess.sendMessage({
+                    name: 'setJavaScriptState',
+                    state: newJavaScriptState
+                });
             }
         }
     }
@@ -132,11 +90,18 @@ export default class PythonInterface {
         else return undefined;
     }
 
+    _handleJupyterPythonStateToState = (key) => {
+        let state0 = {};
+        let val0 = _json_parse(this._reactComponent.props.jupyterModel.get(key, null));
+        state0[key] = val0;
+        this._reactComponent.setState(state0);
+    }
+
     _cleanup() {
-        if (window.using_electron) {
-            if (!this._process) return;
-            this._process.close();
-            this._process = null;
+        if (!this._reactComponent.props.jupyterModel) {
+            if (!this._pythonProcess) return;
+            this._pythonProcess.close();
+            this._pythonProcess = null;
         }
     }
 
