@@ -1,13 +1,10 @@
 # reactopya
 
-A reactopya widget consists of:
-
-* A ReactJS component for rendering on a webpage, notebook, or desktop application
-* A Python class for performing required backend computations and data retrieval
-
-Once a reactopya widget is created, it may be deployed in a number of different ways.
+For an overview of Reactopya and to see a collection of exmaple widgets, go to [reactopya_gallery](https://github.com/flatironinstitute/reactopya_gallery).
 
 ## Installation
+
+Note: at this point it's better to follow the instructions for installing reactopya_gallery.
 
 This repository represents both a Python package and a npm module.
 
