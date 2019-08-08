@@ -57,7 +57,7 @@ class Component:
                 break
             time.sleep(0.01)
 
-    def init_jupyter(self):
+    def init_jupyter(self, **kwargs):
         self._jupyter_mode = True
         self._initial_update()
     
