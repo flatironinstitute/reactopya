@@ -34,11 +34,11 @@ def _install_electron(config):
     cmd = '''
         #!/bin/bash
         set -ex
-        cd generated/{extension_name}
+        cd generated/{project_name}
         pip install -e .
         yarn install
         yarn install-electron
-    '''.format(extension_name=config['extension_name'])
+    '''.format(project_name=config['project_name'])
     shell_cmd = ShellScript(cmd)
     shell_cmd.start()
     retcode = shell_cmd.wait()
@@ -52,9 +52,9 @@ def _start_electron_dev(config):
     cmd = '''
         #!/bin/bash
         set -ex
-        cd generated/{extension_name}
+        cd generated/{project_name}
         yarn electron-dev
-    '''.format(extension_name=config['extension_name'])
+    '''.format(project_name=config['project_name'])
     shell_cmd = ShellScript(cmd)
     shell_cmd.start()
     retcode = shell_cmd.wait()
@@ -66,13 +66,13 @@ def _install_jupyter_extension(config):
     cmd = '''
         #!/bin/bash
         set -ex
-        cd generated/{extension_name}
+        cd generated/{project_name}
         pip install -e .
-        cd ../{extension_name}_jup
+        cd ../{project_name}_jup
         pip install -e .
         yarn install
         yarn install-extension
-    '''.format(extension_name=config['extension_name'])
+    '''.format(project_name=config['project_name'])
     shell_cmd = ShellScript(cmd)
     shell_cmd.start()
     retcode = shell_cmd.wait()
@@ -80,7 +80,7 @@ def _install_jupyter_extension(config):
     if retcode != 0:
         raise Exception('Shell script exited with non-zero return code: {}'.format(retcode))
     
-    print('You may now import {}_jup within a jupyter notebook.'.format(config['extension_name']))
+    print('You may now import {}_jup within a jupyter notebook.'.format(config['project_name']))
 
 def _generate(config):
     print('Reactopya: Generating code...')
@@ -200,7 +200,7 @@ def _write_text_file_if_changed(fname, txt):
         pass
 
 def _map_file_name(fname, config):
-    fname = fname.replace('{extension_name}', config['extension_name'])
+    fname = fname.replace('{project_name}', config['project_name'])
     return fname
 
 if __name__ == '__main__':

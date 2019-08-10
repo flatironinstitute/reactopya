@@ -11,6 +11,6 @@ def _jupyter_nbextension_paths():
     return [{
         'section': 'notebook',
         'src': 'static',
-        'dest': '{{ extension_name }}_jup',
-        'require': '{{ extension_name }}_jup/extension'
+        'dest': '{{ project_name }}_jup',
+        'require': '{{ project_name }}_jup/extension'
     }]

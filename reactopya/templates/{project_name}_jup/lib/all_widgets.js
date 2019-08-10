@@ -18,8 +18,8 @@ export class {{ widget.componentName }}Model extends widgets.DOMWidgetModel {
     defaults = _.extend(widgets.DOMWidgetModel.prototype.defaults(), {
         _model_name : '{{ widget.componentName }}Model',
         _view_name : '{{ widget.componentName }}View',
-        _model_module : '{{ extension_name }}_jup',
-        _view_module : '{{ extension_name }}_jup',
+        _model_module : '{{ project_name }}_jup',
+        _view_module : '{{ project_name }}_jup',
         _model_module_version : '{{ version }}',
         _view_module_version : '{{ version }}',
 

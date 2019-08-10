@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import * as Examples from '../../{{ extension_name }}_widgets';
+import * as Examples from '../../{{ project_name }}_widgets';
 import { Paper, Container, Grid } from "@material-ui/core";
 
 class LazyLoader extends Component {

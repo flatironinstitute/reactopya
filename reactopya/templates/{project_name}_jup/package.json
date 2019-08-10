@@ -1,5 +1,5 @@
 {
-    "name": "{{ extension_name }}_jup",
+    "name": "{{ project_name }}_jup",
     "version": "{{ version }}",
     "description": "{{ description }}",
     "author": "{{ author }}",
@@ -10,14 +10,14 @@
         "ipython",
         "ipywidgets",
         "jupyterlab-extension",
-        "{{ extension_name }}"
+        "{{ project_name }}"
     ],
     "scripts": {
         "clean": "rimraf dist/",
         "prepublish": "webpack",
         "build": "webpack",
         "watch": "webpack --watch --mode=development",
-        "install-extension": "jupyter nbextension install --py --symlink --sys-prefix {{ extension_name }}_jup && jupyter nbextension enable {{ extension_name }}_jup --py --sys-prefix",
+        "install-extension": "jupyter nbextension install --py --symlink --sys-prefix {{ project_name }}_jup && jupyter nbextension enable {{ project_name }}_jup --py --sys-prefix",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "dependencies": {

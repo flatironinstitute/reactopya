@@ -61,7 +61,7 @@ https://github.com/facebook/react/issues/13991
 const resolve = {
     extensions: ['.css', '.js', '.json', '.png', '.gif', '.jpg', '.svg'],
     alias: {
-        'reactopya': __dirname + '/../{{ extension_name }}/reactopya_js',
+        'reactopya': __dirname + '/../{{ project_name }}/reactopya_js',
         'react': __dirname + '/node_modules/react' // See above
     }
 };
@@ -79,7 +79,7 @@ module.exports = [
         entry: ['./lib/extension.js'],
         output: {
             filename: 'extension.js',
-            path: path.resolve(__dirname, '{{ extension_name }}_jup', 'static'),
+            path: path.resolve(__dirname, '{{ project_name }}_jup', 'static'),
             libraryTarget: 'amd'
         }
     },
@@ -92,7 +92,7 @@ module.exports = [
         entry: ['./lib/index.js'],
         output: {
             filename: 'index.js',
-            path: path.resolve(__dirname, '{{ extension_name }}_jup', 'static'),
+            path: path.resolve(__dirname, '{{ project_name }}_jup', 'static'),
             libraryTarget: 'amd'
         },
         devtool: 'source-map',
@@ -121,7 +121,7 @@ module.exports = [
             filename: 'index.js',
             path: path.resolve(__dirname, 'dist'),
             libraryTarget: 'amd',
-            publicPath: 'https://unpkg.com/{{ extension_name }}_jup@' + version + '/dist/'
+            publicPath: 'https://unpkg.com/{{ project_name }}_jup@' + version + '/dist/'
         },
         devtool: 'source-map',
         module: {

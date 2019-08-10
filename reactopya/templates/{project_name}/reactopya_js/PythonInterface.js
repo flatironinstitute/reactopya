@@ -4,7 +4,7 @@ const stable_stringify = require('json-stable-stringify');
 export default class PythonInterface {
     constructor(reactComponent, config) {
         this._reactComponent = reactComponent;
-        this._pythonModuleName = config.pythonModuleName || '{{ extension_name }}_widgets';
+        this._pythonModuleName = config.pythonModuleName || '{{ project_name }}_widgets';
         this._componentName = config.componentName;
         this._syncPythonStateToStateKeys = config.pythonStateKeys;
         this._syncStateToJavaScriptStateKeys = config.javaScriptStateKeys;

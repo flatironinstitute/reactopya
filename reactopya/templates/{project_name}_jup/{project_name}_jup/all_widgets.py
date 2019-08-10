@@ -8,7 +8,7 @@ from traitlets import Unicode, Dict
 import json
 
 {% for widget in widgets -%}
-from {{ extension_name }}_widgets import {{ widget.componentName }} as {{ widget.componentName }}Orig
+from {{ project_name }}_widgets import {{ widget.componentName }} as {{ widget.componentName }}Orig
 {% endfor %}
 
 def _json_parse(x):
@@ -29,8 +29,8 @@ class {{ widget.componentName }}(widgets.DOMWidget):
     """Jupyter widget for {{ widget.componentName }}"""
     _view_name = Unicode('{{ widget.componentName }}View').tag(sync=True)
     _model_name = Unicode('{{ widget.componentName }}Model').tag(sync=True)
-    _view_module = Unicode('{{ extension_name }}_jup').tag(sync=True)
-    _model_module = Unicode('{{ extension_name }}_jup').tag(sync=True)
+    _view_module = Unicode('{{ project_name }}_jup').tag(sync=True)
+    _model_module = Unicode('{{ project_name }}_jup').tag(sync=True)
     _view_module_version = Unicode('^{{ version }}').tag(sync=True)
     _model_module_version = Unicode('^{{ version }}').tag(sync=True)
 

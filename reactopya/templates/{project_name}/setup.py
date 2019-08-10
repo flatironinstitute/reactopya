@@ -1,15 +1,16 @@
 import setuptools
 
-pkg_name = "{{ extension_name }}_jup"
+pkg_name = "{{ project_name }}"
 
 setuptools.setup(
     name=pkg_name,
     version="{{ version }}",
-    author="{{ author }}",
-    description="{{ description }}",
+    author="Jeremy Magland",
+    author_email="jmagland@flatironinstitute.org",
+    description="",
     packages=setuptools.find_packages(),
     scripts=[],
-    install_requires=['jupyter'],
+    install_requires=[],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: Apache Software License",

@@ -1,5 +1,5 @@
 {
-    "name": "{{ extension_name}}",
+    "name": "{{ project_name}}",
     "version": "{{ version }}",
     "description": "{{ description }}",
     "author": "{{ author }}",

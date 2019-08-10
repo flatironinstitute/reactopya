@@ -71,7 +71,7 @@ module.exports.push({
         // You can do fun things here like use the [hash] keyword to generate unique
         // filenames, but for this purpose reactopya.js is fine. This file and path will
         // be what you put in package.json's "main" field
-        filename: '{{ extension_name }}.js',
+        filename: '{{ project_name }}.js',
         // This field determines how things are importable when installed from other
         // sources. UMD may not be correct now and there is an open issue to fix this,
         // but until then, more reading can be found here:
@@ -81,7 +81,7 @@ module.exports.push({
     plugins: [
         new HtmlWebpackPlugin({
             template: 'src/index_template.html',
-            title: '{{ extension_name }}'
+            title: '{{ project_name }}'
         }),
         new HtmlWebpackRootPlugin()
     ],
