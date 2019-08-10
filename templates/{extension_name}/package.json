@@ -1,0 +1,51 @@
+{
+    "name": "{{ extension_name}}",
+    "version": "{{ version }}",
+    "description": "{{ description }}",
+    "author": "{{ author }}",
+    "license": "{{ license }}",
+    "main": "src/index.js",
+    "scripts": {
+      "test": "echo \"Error: no test specified\" && exit 1",
+      "dev": "echo \"starting development server\" && webpack-dev-server --hot",
+      "chrome": "echo \"Opening as app in chrome. This should be used with yarn dev.\" && google-chrome --app=http://localhost:5050",
+      "build": "echo \"building bundle\" && NODE_OPTIONS=--max_old_space_size=4096 webpack --devtool source-map",
+      "start": "echo \"starting server\" && node server/index.js",
+      "electron-dev": "concurrently --kill-others \"yarn dev\" \"sleep 2 && cd electron && yarn start\"",
+      "install-electron": "echo \"installing electron\" && cd electron && yarn install"
+    },
+    "dependencies": {
+      {% for key, value in package_json.dependencies.items() -%}
+      "{{ key }}": "{{ value }}",
+      {% endfor -%}
+      "@hot-loader/react-dom": "^16.8.6",
+      "@material-ui/core": "^4.2.0",
+      "@material-ui/icons": "^4.2.1",
+      "@material-ui/styles": "^4.2.0",
+      "json-stable-stringify": "^1.0.1",
+      "react": "^16.8.6",
+      "react-hot-loader": "^4.12.6",
+      "react-icons": "^3.7.0",
+      "react-lazyload": "^2.6.2",
+      "ws": "^7.1.1"
+    },
+    "devDependencies": {
+      "@babel/core": "^7.4.5",
+      "@babel/plugin-proposal-class-properties": "^7.5.0",
+      "@babel/preset-env": "^7.4.5",
+      "@babel/preset-react": "^7.0.0",
+      "@tulipjs/eslint-config": "^1.1.1",
+      "babel-loader": "^8.0.6",
+      "concurrently": "^4.1.1",
+      "css-loader": "^3.0.0",
+      "html-webpack-plugin": "^3.2.0",
+      "html-webpack-root-plugin": "^0.10.0",
+      "link-module-alias": "^1.2.0",
+      "style-loader": "^0.23.1",
+      "url-loader": "^2.0.1",
+      "webpack": "^4.35.0",
+      "webpack-cli": "^3.3.5",
+      "webpack-dev-server": "^3.7.2"
+    }
+  }
+  

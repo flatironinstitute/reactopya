@@ -4,8 +4,8 @@ const stable_stringify = require('json-stable-stringify');
 export default class PythonInterface {
     constructor(reactComponent, config) {
         this._reactComponent = reactComponent;
-        this._pythonModuleName = config.pythonModuleName;
-        this._pythonComponentName = config.pythonComponentName;
+        this._pythonModuleName = config.pythonModuleName || '{{ extension_name }}_widgets';
+        this._componentName = config.componentName;
         this._syncPythonStateToStateKeys = config.pythonStateKeys;
         this._syncStateToJavaScriptStateKeys = config.javaScriptStateKeys;
         this._pythonProcess = null;
@@ -25,7 +25,7 @@ export default class PythonInterface {
         }
         else {
             if (this._pythonProcess) return;
-            this._pythonProcess = new PythonProcess(this._pythonModuleName, this._pythonComponentName);
+            this._pythonProcess = new PythonProcess(this._pythonModuleName, this._componentName);
             this._pythonProcess.onReceiveMessage(this._handleReceiveMessageFromProcess);
             this._pythonProcess.start();
             window.addEventListener('beforeunload', () => {

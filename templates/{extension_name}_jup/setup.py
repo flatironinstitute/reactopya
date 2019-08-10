@@ -1,21 +1,18 @@
 import setuptools
 
-pkg_name = "reactopya"
+pkg_name = "{{ extension_name }}_jup"
 
 setuptools.setup(
     name=pkg_name,
-    version="0.1.0",
-    author="Jeremy Magland",
-    author_email="jmagland@flatironinstitute.org",
-    description="",
+    version="{{ version }}",
+    author="{{ author }}",
+    description="{{ description }}",
     packages=setuptools.find_packages(),
-    scripts=['bin/reactopya'],
-    install_requires=[
-        "jinja2"
-    ],
-    classifiers=(
+    scripts=[],
+    install_requires=['jupyter'],
+    classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
-    )
+    ]
 )

@@ -1,8 +1,13 @@
 const path = require('path');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const HtmlWebpackRootPlugin = require('html-webpack-root-plugin');
+var version = require('./package.json').version;
 
-module.exports = {
+module.exports = [];
+
+module.exports.push({
     // This is where our app starts.
-    entry: './js/index.js',
+    entry: './src/index.js',
     // module is where we
     // define all the rules for how webpack will deal with things.
     module: {
@@ -26,7 +31,7 @@ module.exports = {
                                 }],
                             "@babel/preset-react"
                         ],
-                        plugins: ["@babel/plugin-proposal-class-properties"]
+                        plugins: ["@babel/plugin-proposal-class-properties", "react-hot-loader/babel"]
                     }
                 }
             },
@@ -50,17 +55,51 @@ module.exports = {
             },
         ],
     },
+    // Here we define explicitly the file types we intend to deal with
+    resolve: {
+        extensions: ['.css', '.js', '.json', '.png', '.gif', '.jpg', '.svg'],
+        alias: {
+            'react-dom': '@hot-loader/react-dom',
+            'reactopya': __dirname + '/reactopya_js'
+        }
+    },
     // This is where we define how everything gets output.
     // dist is a common output folder, and it should be gitignored.
     output: {
         path: path.resolve(__dirname, 'dist/'),
         publicPath: '',
-        filename: 'index.js',
+        // You can do fun things here like use the [hash] keyword to generate unique
+        // filenames, but for this purpose reactopya.js is fine. This file and path will
+        // be what you put in package.json's "main" field
+        filename: '{{ extension_name }}.js',
         // This field determines how things are importable when installed from other
         // sources. UMD may not be correct now and there is an open issue to fix this,
         // but until then, more reading can be found here:
         // https://webpack.js.org/configuration/output/#output-librarytarget
         libraryTarget: 'umd',
+    },
+    plugins: [
+        new HtmlWebpackPlugin({
+            template: 'src/index_template.html',
+            title: '{{ extension_name }}'
+        }),
+        new HtmlWebpackRootPlugin()
+    ],
+    optimization: {
+        // Create a separate file for vendor modules
+        splitChunks: {
+            cacheGroups: {
+                commons: {
+                    test: /[\\/]node_modules[\\/]/,
+                    name: 'vendors',
+                    chunks: 'all'
+                }
+            }
+        }
+    },
+    devServer: {
+        contentBase: 'dist',
+        port: 5050
     }
-};
+});
 
