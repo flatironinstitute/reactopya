@@ -5,7 +5,7 @@ from jinja2 import Template
 import json
 import shutil
 import argparse
-from reactopya import ShellScript, reactopya_templates_dir
+from reactopya import ShellScript, reactopya_templates_directory
 
 def main():
     parser = argparse.ArgumentParser(description='Reactopya command-line utility')
@@ -84,7 +84,7 @@ def _install_jupyter_extension(config):
 
 def _generate(config):
     print('Reactopya: Generating code...')
-    num = _generate_directory(reactopya_templates_dir(), 'generated', config=config)
+    num = _generate_directory(reactopya_templates_directory(), 'generated', config=config)
     print('{} files processed'.format(num))
 
 def _load_config():
