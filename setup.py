@@ -4,12 +4,16 @@ pkg_name = "reactopya"
 
 setuptools.setup(
     name=pkg_name,
-    version="0.2.0",
+    version="0.2.3",
     author="Jeremy Magland",
     author_email="jmagland@flatironinstitute.org",
     description="",
     packages=setuptools.find_packages(),
     scripts=['bin/reactopya'],
+    package_data={
+        'reactopya': ['templates/*']
+    },
+    include_package_data=True,
     install_requires=[
         "jinja2"
     ],
