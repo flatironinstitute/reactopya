@@ -201,7 +201,7 @@ def _generate_directory(template_source_path, dest_path, config, do_render=True)
             os.remove(os.path.join(dest_path, fname))
 
     for dirname in dirnames_existing:
-        if dirname not in (dirnames_dst + ['node_modules']):
+        if (dirname not in (dirnames_dst + ['node_modules'])) and (not dirname.endswith('.egg-info')):
             print('Removing directory: {}'.format(
                 os.path.join(dest_path, dirname)))
             shutil.rmtree(os.path.join(dest_path, dirname))
