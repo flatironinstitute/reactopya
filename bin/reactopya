@@ -7,30 +7,75 @@ import shutil
 import argparse
 from reactopya import ShellScript, reactopya_templates_directory
 
+
 def main():
-    parser = argparse.ArgumentParser(description='Reactopya command-line utility')
-    parser.add_argument('command', help='One of the following: generate | install-electron | start-electron-dev | install-jupyter-extension')
+
+    commands = {
+        'generate': _generate,
+        'install-electron': _install_electron,
+        'start-electron-dev': _start_electron_dev,
+        'install-jupyter-extension': _install_jupyter_extension,
+        'list-widgets': _list_widgets,
+        'init-project': _init_project
+    }
+
+    parser = argparse.ArgumentParser(
+        description='Reactopya command-line utility')
+    parser.add_argument('command', help='One of the following: {}'.format(
+        ' | '.join(commands.keys())))
 
     args = parser.parse_args()
     command = args.command
 
-    config = _load_config()
+    if command not in commands.keys():
+        raise Exception('Unrecognized command: {}'.format(command))
 
-    if command == 'generate':
-        _generate(config=config)
-    elif command == 'install-electron':
-        _generate(config=config)
-        _install_electron(config=config)
-    elif command == 'start-electron-dev':
-        _generate(config=config)
-        _start_electron_dev(config=config)
-    elif command == 'install-jupyter-extension':
-        _generate(config=config)
-        _install_jupyter_extension(config=config)
+    if command not in ['init-project']:
+        config = _load_config()
+        commands[command](config, args=args)
     else:
-        raise Exception('Unknown command: {}'.format(command))
+        commands[command](args=args)
 
-def _install_electron(config):
+
+def _init_project(args):
+    if os.path.exists('reactopya.config.json'):
+        raise Exception("File already exists: reactopya.config.json")
+    if os.path.exists('widgets'):
+        raise Exception("File or folder already exists: widgets")
+    project_name = input('Name of project (no spaces): ') or ''
+    version = input('Version (e.g., 0.1.0): ') or ''
+    description = input('Description: ') or ''
+    author = input('Author: ') or ''
+    license = input('License (e.g., Apache-2.0): ')
+    obj = {
+        "project_name": project_name,
+        "version": version,
+        "description": description,
+        "author": author,
+        "license": license,
+        "package_json": {
+            "dependencies": {
+            }
+        },
+        "setup_py": {
+            "install_requires": [
+            ]
+        }
+    }
+    with open('reactopya.config.json', 'w') as f:
+        json.dump(obj, f)
+    # template_dir = 
+    # _generate_directory(os.path.join(reactopya_templates_directory(), '_other', 'widgets', ))
+    os.mkdir('widgets')
+
+
+def _list_widgets(config, args):
+    for w in config['widgets']:
+        print(w['componentName'])
+
+
+def _install_electron(config, args):
+    _generate(config=config, args=args)
     cmd = '''
         #!/bin/bash
         set -ex
@@ -44,11 +89,14 @@ def _install_electron(config):
     retcode = shell_cmd.wait()
 
     if retcode != 0:
-        raise Exception('Shell script exited with non-zero return code: {}'.format(retcode))
+        raise Exception(
+            'Shell script exited with non-zero return code: {}'.format(retcode))
 
     print('You may now run "reactopya start-electron-dev".')
 
-def _start_electron_dev(config):
+
+def _start_electron_dev(config, args):
+    _generate(config=config, args=args)
     cmd = '''
         #!/bin/bash
         set -ex
@@ -60,14 +108,18 @@ def _start_electron_dev(config):
     retcode = shell_cmd.wait()
 
     if retcode != 0:
-        raise Exception('Shell script exited with non-zero return code: {}'.format(retcode))
+        raise Exception(
+            'Shell script exited with non-zero return code: {}'.format(retcode))
 
-def _install_jupyter_extension(config):
+
+def _install_jupyter_extension(config, args):
+    _generate(config=config)
     cmd = '''
         #!/bin/bash
         set -ex
         cd generated/{project_name}
         pip install -e .
+        yarn install
         cd ../{project_name}_jup
         pip install -e .
         yarn install
@@ -78,21 +130,26 @@ def _install_jupyter_extension(config):
     retcode = shell_cmd.wait()
 
     if retcode != 0:
-        raise Exception('Shell script exited with non-zero return code: {}'.format(retcode))
-    
-    print('You may now import {}_jup within a jupyter notebook.'.format(config['project_name']))
+        raise Exception(
+            'Shell script exited with non-zero return code: {}'.format(retcode))
 
-def _generate(config):
+    print('You may now import {}_jup within a jupyter notebook.'.format(
+        config['project_name']))
+
+
+def _generate(config, args):
     print('Reactopya: Generating code...')
-    num = _generate_directory(reactopya_templates_directory(), 'generated', config=config)
+    num = _generate_directory(
+        reactopya_templates_directory(), 'generated', config=config)
     print('{} files processed'.format(num))
+
 
 def _load_config():
     with open('reactopya.config.json', 'r') as f:
         config = json.load(f)
     config['widgets'] = _load_widgets_config()
-    config['package_json'] = _load_package_json()
     return config
+
 
 def _load_widgets_config():
     dirnames = [
@@ -108,17 +165,6 @@ def _load_widgets_config():
             ret.append(widget)
     return ret
 
-def _load_package_json():
-    if os.path.exists('widgets/package.json'):
-        with open('widgets/package.json', 'r') as f:
-            x = json.load(f)
-        return dict(
-            dependencies = x.get('dependencies', {})
-        )
-    else:
-        return dict(
-            dependencies={}
-        )
 
 def _generate_directory(template_source_path, dest_path, config, do_render=True):
     num_files_processed = 0
@@ -126,16 +172,17 @@ def _generate_directory(template_source_path, dest_path, config, do_render=True)
         name for name in os.listdir(template_source_path)
         if os.path.isfile(os.path.join(template_source_path, name))
     ]
-    fnames_dst = [ _map_file_name(fname, config=config) for fname in fnames]
+    fnames_dst = [_map_file_name(fname, config=config) for fname in fnames]
     dirnames = [
         name for name in os.listdir(template_source_path)
         if os.path.isdir(os.path.join(template_source_path, name))
     ]
-    dirnames_dst = [ _map_file_name(dirname, config=config) for dirname in dirnames]
+    dirnames_dst = [_map_file_name(dirname, config=config)
+                    for dirname in dirnames]
 
     if len(fnames) == 1 and fnames[0] == '.widgets_go_here':
         return _generate_directory('widgets', dest_path, config, do_render=False)
-        
+
     if not os.path.exists(dest_path):
         os.mkdir(dest_path)
 
@@ -152,10 +199,11 @@ def _generate_directory(template_source_path, dest_path, config, do_render=True)
         if fname not in fnames_dst:
             print('Removing: {}'.format(os.path.join(dest_path, fname)))
             os.remove(os.path.join(dest_path, fname))
-    
+
     for dirname in dirnames_existing:
         if dirname not in (dirnames_dst + ['node_modules']):
-            print('Removing directory: {}'.format(os.path.join(dest_path, dirname)))
+            print('Removing directory: {}'.format(
+                os.path.join(dest_path, dirname)))
             shutil.rmtree(os.path.join(dest_path, dirname))
 
     for i, fname in enumerate(fnames):
@@ -179,12 +227,14 @@ def _generate_directory(template_source_path, dest_path, config, do_render=True)
             num_files_processed = num_files_processed + num
     return num_files_processed
 
+
 def _read_text_file(fname):
     try:
         with open(fname, 'r') as f:
             return f.read()
     except:
         return ''
+
 
 def _write_text_file_if_changed(fname, txt):
     if os.path.exists(fname):
@@ -199,9 +249,11 @@ def _write_text_file_if_changed(fname, txt):
         # print('Unmodified: {}'.format(fname))
         pass
 
+
 def _map_file_name(fname, config):
     fname = fname.replace('{project_name}', config['project_name'])
     return fname
+
 
 if __name__ == '__main__':
     main()

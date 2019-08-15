@@ -9,7 +9,11 @@ setuptools.setup(
     description="{{ description }}",
     packages=setuptools.find_packages(),
     scripts=[],
-    install_requires=['jupyter'],
+    install_requires=[
+        {% for value in setup_py.install_requires -%}
+        '{{ value }}'{%- if not loop.last %},{% endif %}
+        {% endfor -%}
+    ],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: Apache Software License",

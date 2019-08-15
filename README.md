@@ -1,10 +1,25 @@
 # Reactopya
 
-Reactopya is a Python package that enables combining of ReactJS with Python code to create widgets that may seamlessly be deployed to the notebook, the web, or the desktop.
+Reactopya is a Python package that enables combining of ReactJS with Python code to create widgets that may seamlessly be deployed to the notebook, the web, or the desktop. See below for more information
 
 ## Example usage
 
 This package is used by [ephys-viz](https://github.com/flatironinstitute/ephys-viz)
+
+## Installation
+
+Prerequisites:
+
+* Linux or OS X
+* Python >= 3.6
+* NodeJS >= 8
+* Yarn
+
+```
+# After cloning this repo
+cd reactopya
+pip install .
+```
 
 ## About Reactopya
 

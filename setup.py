@@ -4,7 +4,7 @@ pkg_name = "reactopya"
 
 setuptools.setup(
     name=pkg_name,
-    version="0.2.5",
+    version="0.2.7",
     author="Jeremy Magland",
     author_email="jmagland@flatironinstitute.org",
     description="",
