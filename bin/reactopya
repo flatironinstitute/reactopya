@@ -251,7 +251,7 @@ def _write_text_file_if_changed(fname, txt):
 
 
 def _map_file_name(fname, config):
-    fname = fname.replace('{project_name}', config['project_name'])
+    fname = fname.replace('__project_name__', config['project_name'])
     return fname
 
 
