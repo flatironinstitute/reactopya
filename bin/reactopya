@@ -113,7 +113,7 @@ def _start_electron_dev(config, args):
 
 
 def _install_jupyter_extension(config, args):
-    _generate(config=config)
+    _generate(config=config, args=args)
     cmd = '''
         #!/bin/bash
         set -ex
