@@ -7,6 +7,7 @@ import shutil
 import argparse
 from reactopya import ShellScript, reactopya_templates_directory
 from argparse import RawTextHelpFormatter
+import time
 
 
 def main():
@@ -16,6 +17,11 @@ def main():
             'name': 'generate',
             'func': _generate,
             'description': 'Generate or regenerate source code'
+        },
+        {
+            'name': 'watch',
+            'func': _watch,
+            'description': 'Starting watching for source code changes, and regenerate source code with each change.'
         },
         {
             'name': 'install-electron',
@@ -215,10 +221,16 @@ def _install_jupyter_extension(config, args):
 
 
 def _generate(config, args):
-    print('Reactopya: Generating code...')
-    num=_generate_directory(
+    (num_processed, num_changed)=_generate_directory(
         reactopya_templates_directory(), 'generated', config=config)
-    print('{} files processed'.format(num))
+    if num_changed > 0:
+        print('{} files processed, {} changed'.format(num_processed, num_changed))
+
+
+def _watch(config, args):
+    while True:
+        _generate(config=config, args=args)
+        time.sleep(5)
 
 
 def _load_config():
@@ -245,6 +257,7 @@ def _load_widgets_config():
 
 def _generate_directory(template_source_path, dest_path, config, do_render=True):
     num_files_processed = 0
+    num_files_changed = 0
     fnames = [
         name for name in os.listdir(template_source_path)
         if os.path.isfile(os.path.join(template_source_path, name))
@@ -275,12 +288,14 @@ def _generate_directory(template_source_path, dest_path, config, do_render=True)
     for fname in fnames_existing:
         if fname not in fnames_dst:
             print('Removing: {}'.format(os.path.join(dest_path, fname)))
+            num_files_changed = num_files_changed + 1
             os.remove(os.path.join(dest_path, fname))
 
     for dirname in dirnames_existing:
         if (dirname not in (dirnames_dst + ['node_modules', 'dist'])) and (not dirname.endswith('.egg-info')):
             print('Removing directory: {}'.format(
                 os.path.join(dest_path, dirname)))
+            num_files_changed = num_files_changed + 1
             shutil.rmtree(os.path.join(dest_path, dirname))
 
     for i, fname in enumerate(fnames):
@@ -288,7 +303,8 @@ def _generate_directory(template_source_path, dest_path, config, do_render=True)
         path_dst = os.path.join(dest_path, fnames_dst[i])
         if _has_binary_extension(path_src):
             data = _read_binary_file(path_src)
-            _write_binary_file_if_changed(path_dst, data)
+            if _write_binary_file_if_changed(path_dst, data):
+                num_files_changed = num_files_changed + 1
         else:
             txt = _read_text_file(path_src)
             if do_render:
@@ -296,17 +312,19 @@ def _generate_directory(template_source_path, dest_path, config, do_render=True)
             else:
                 txt2 = txt
             num_files_processed = num_files_processed + 1
-            _write_text_file_if_changed(path_dst, txt2)
+            if _write_text_file_if_changed(path_dst, txt2):
+                num_files_changed = num_files_changed + 1
     for i, dirname in enumerate(dirnames):
         if dirname not in ['node_modules', '.git']:
-            num = _generate_directory(
+            nump, numc = _generate_directory(
                 os.path.join(template_source_path, dirname),
                 os.path.join(dest_path, dirnames_dst[i]),
                 config=config,
                 do_render=do_render
             )
-            num_files_processed = num_files_processed + num
-    return num_files_processed
+            num_files_processed = num_files_processed + nump
+            num_files_changed = num_files_changed + numc
+    return num_files_processed, num_files_changed
 
 
 def _read_text_file(fname):
@@ -333,9 +351,10 @@ def _write_text_file_if_changed(fname, txt):
         print('Writing: {}'.format(fname))
         with open(fname, 'w') as f:
             f.write(txt)
+        return True
     else:
         # print('Unmodified: {}'.format(fname))
-        pass
+        return False
 
 def _write_binary_file_if_changed(fname, data):
     if os.path.exists(fname):
@@ -346,9 +365,10 @@ def _write_binary_file_if_changed(fname, data):
         print('Writing: {}'.format(fname))
         with open(fname, 'wb') as f:
             f.write(data)
+        return True
     else:
         # print('Unmodified: {}'.format(fname))
-        pass
+        return False
 
 
 def _map_file_name(fname, config):
