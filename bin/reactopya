@@ -41,6 +41,16 @@ def main():
             'name': 'init-project',
             'func': _init_project,
             'description': 'Initialize a new reactopya project (this command is work in progress)'
+        },
+        {
+            'name': 'install-server',
+            'func': _install_server,
+            'description': 'Install gallery server'
+        },
+        {
+            'name': 'start-server',
+            'func': _start_server,
+            'description': 'Start gallery server'
         }
     ]
     commands_by_name = {}
@@ -141,6 +151,44 @@ def _start_electron_dev(config, args):
             'Shell script exited with non-zero return code: {}'.format(retcode))
 
 
+def _install_server(config, args):
+    _generate(config=config, args=args)
+    cmd = '''
+        #!/bin/bash
+        set -ex
+        cd generated/{project_name}
+        pip install -e .
+        yarn install
+        yarn build
+    '''.format(project_name=config['project_name'])
+    shell_cmd = ShellScript(cmd)
+    shell_cmd.start()
+    retcode = shell_cmd.wait()
+
+    if retcode != 0:
+        raise Exception(
+            'Shell script exited with non-zero return code: {}'.format(retcode))
+
+    print('You may now run "reactopya start-server".')
+
+
+def _start_server(config, args):
+    _generate(config = config, args = args)
+    cmd='''
+        #!/bin/bash
+        set -ex
+        cd generated/{project_name}
+        yarn start
+    '''.format(project_name = config['project_name'])
+    shell_cmd=ShellScript(cmd)
+    shell_cmd.start()
+    retcode=shell_cmd.wait()
+
+    if retcode != 0:
+        raise Exception(
+            'Shell script exited with non-zero return code: {}'.format(retcode))
+
+
 def _install_jupyter_extension(config, args):
     _generate(config = config, args = args)
     cmd='''
@@ -230,7 +278,7 @@ def _generate_directory(template_source_path, dest_path, config, do_render=True)
             os.remove(os.path.join(dest_path, fname))
 
     for dirname in dirnames_existing:
-        if (dirname not in (dirnames_dst + ['node_modules'])) and (not dirname.endswith('.egg-info')):
+        if (dirname not in (dirnames_dst + ['node_modules', 'dist'])) and (not dirname.endswith('.egg-info')):
             print('Removing directory: {}'.format(
                 os.path.join(dest_path, dirname)))
             shutil.rmtree(os.path.join(dest_path, dirname))
