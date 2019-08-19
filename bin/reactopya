@@ -6,35 +6,64 @@ import json
 import shutil
 import argparse
 from reactopya import ShellScript, reactopya_templates_directory
+from argparse import RawTextHelpFormatter
 
 
 def main():
 
-    commands = {
-        'generate': _generate,
-        'install-electron': _install_electron,
-        'start-electron-dev': _start_electron_dev,
-        'install-jupyter-extension': _install_jupyter_extension,
-        'list-widgets': _list_widgets,
-        'init-project': _init_project
-    }
+    commands = [
+        {
+            'name': 'generate',
+            'func': _generate,
+            'description': 'Generate or regenerate source code'
+        },
+        {
+            'name': 'install-electron',
+            'func': _install_electron,
+            'description': 'Install electron (must be called prior to running start-electron-dev)',
+        },
+        {
+            'name': 'start-electron-dev',
+            'func': _start_electron_dev,
+            'description': 'Start the electron application in development mode (use install-electron first)'
+        },
+        {
+            'name': 'install-jupyter-extension',
+            'func': _install_jupyter_extension,
+            'description': 'Install the jupyter notebook extension'
+        },
+        {
+            'name': 'list-widgets',
+            'func': _list_widgets,
+            'description': 'List the widgets in the current project'
+        },
+        {
+            'name': 'init-project',
+            'func': _init_project,
+            'description': 'Initialize a new reactopya project (this command is work in progress)'
+        }
+    ]
+    commands_by_name = {}
+    for x in commands:
+        commands_by_name[x['name']] = x['func']
+
+    command_description = '\n'.join(['{} - {}'.format(x['name'], x['description']) for x in commands])
 
     parser = argparse.ArgumentParser(
-        description='Reactopya command-line utility')
-    parser.add_argument('command', help='One of the following: {}'.format(
-        ' | '.join(commands.keys())))
+        description = "Reactopya command-line utility", formatter_class=RawTextHelpFormatter)
+    parser.add_argument('command', help = 'One of the following:\n\n{}\n'.format(command_description))
 
-    args = parser.parse_args()
-    command = args.command
+    args=parser.parse_args()
+    command=args.command
 
-    if command not in commands.keys():
+    if command not in commands_by_name.keys():
         raise Exception('Unrecognized command: {}'.format(command))
 
     if command not in ['init-project']:
-        config = _load_config()
-        commands[command](config, args=args)
+        config=_load_config()
+        commands_by_name[command](config, args = args)
     else:
-        commands[command](args=args)
+        commands_by_name[command](args = args)
 
 
 def _init_project(args):
@@ -42,12 +71,12 @@ def _init_project(args):
         raise Exception("File already exists: reactopya.config.json")
     if os.path.exists('widgets'):
         raise Exception("File or folder already exists: widgets")
-    project_name = input('Name of project (no spaces): ') or ''
-    version = input('Version (e.g., 0.1.0): ') or ''
-    description = input('Description: ') or ''
-    author = input('Author: ') or ''
-    license = input('License (e.g., Apache-2.0): ')
-    obj = {
+    project_name=input('Name of project (no spaces): ') or ''
+    version=input('Version (e.g., 0.1.0): ') or ''
+    description=input('Description: ') or ''
+    author=input('Author: ') or ''
+    license=input('License (e.g., Apache-2.0): ')
+    obj={
         "project_name": project_name,
         "version": version,
         "description": description,
@@ -64,7 +93,7 @@ def _init_project(args):
     }
     with open('reactopya.config.json', 'w') as f:
         json.dump(obj, f)
-    # template_dir = 
+    # template_dir =
     # _generate_directory(os.path.join(reactopya_templates_directory(), '_other', 'widgets', ))
     os.mkdir('widgets')
 
@@ -96,16 +125,16 @@ def _install_electron(config, args):
 
 
 def _start_electron_dev(config, args):
-    _generate(config=config, args=args)
-    cmd = '''
+    _generate(config = config, args = args)
+    cmd='''
         #!/bin/bash
         set -ex
         cd generated/{project_name}
         yarn electron-dev
-    '''.format(project_name=config['project_name'])
-    shell_cmd = ShellScript(cmd)
+    '''.format(project_name = config['project_name'])
+    shell_cmd=ShellScript(cmd)
     shell_cmd.start()
-    retcode = shell_cmd.wait()
+    retcode=shell_cmd.wait()
 
     if retcode != 0:
         raise Exception(
@@ -113,8 +142,8 @@ def _start_electron_dev(config, args):
 
 
 def _install_jupyter_extension(config, args):
-    _generate(config=config, args=args)
-    cmd = '''
+    _generate(config = config, args = args)
+    cmd='''
         #!/bin/bash
         set -ex
         cd generated/{project_name}
@@ -124,10 +153,10 @@ def _install_jupyter_extension(config, args):
         pip install -e .
         yarn install
         yarn install-extension
-    '''.format(project_name=config['project_name'])
-    shell_cmd = ShellScript(cmd)
+    '''.format(project_name = config['project_name'])
+    shell_cmd=ShellScript(cmd)
     shell_cmd.start()
-    retcode = shell_cmd.wait()
+    retcode=shell_cmd.wait()
 
     if retcode != 0:
         raise Exception(
@@ -139,7 +168,7 @@ def _install_jupyter_extension(config, args):
 
 def _generate(config, args):
     print('Reactopya: Generating code...')
-    num = _generate_directory(
+    num=_generate_directory(
         reactopya_templates_directory(), 'generated', config=config)
     print('{} files processed'.format(num))
 
@@ -209,13 +238,17 @@ def _generate_directory(template_source_path, dest_path, config, do_render=True)
     for i, fname in enumerate(fnames):
         path_src = os.path.join(template_source_path, fname)
         path_dst = os.path.join(dest_path, fnames_dst[i])
-        txt = _read_text_file(path_src)
-        if do_render:
-            txt2 = Template(txt).render(config)
+        if _has_binary_extension(path_src):
+            data = _read_binary_file(path_src)
+            _write_binary_file_if_changed(path_dst, data)
         else:
-            txt2 = txt
-        num_files_processed = num_files_processed + 1
-        _write_text_file_if_changed(path_dst, txt2)
+            txt = _read_text_file(path_src)
+            if do_render:
+                txt2 = Template(txt).render(config)
+            else:
+                txt2 = txt
+            num_files_processed = num_files_processed + 1
+            _write_text_file_if_changed(path_dst, txt2)
     for i, dirname in enumerate(dirnames):
         if dirname not in ['node_modules', '.git']:
             num = _generate_directory(
@@ -235,6 +268,13 @@ def _read_text_file(fname):
     except:
         return ''
 
+def _read_binary_file(fname):
+    try:
+        with open(fname, 'rb') as f:
+            return f.read()
+    except:
+        return ''
+
 
 def _write_text_file_if_changed(fname, txt):
     if os.path.exists(fname):
@@ -249,11 +289,28 @@ def _write_text_file_if_changed(fname, txt):
         # print('Unmodified: {}'.format(fname))
         pass
 
+def _write_binary_file_if_changed(fname, data):
+    if os.path.exists(fname):
+        data_existing = _read_binary_file(fname)
+    else:
+        data_existing = None
+    if data != data_existing:
+        print('Writing: {}'.format(fname))
+        with open(fname, 'wb') as f:
+            f.write(data)
+    else:
+        # print('Unmodified: {}'.format(fname))
+        pass
+
 
 def _map_file_name(fname, config):
     fname = fname.replace('__project_name__', config['project_name'])
     return fname
 
+def _has_binary_extension(path):
+    ext = os.path.splitext(path)[1]
+    binary_extensions = ['.jpg', '.png', '.gif', '.svg', '.dat', '.mda']
+    return (ext in binary_extensions)
 
 if __name__ == '__main__':
     main()

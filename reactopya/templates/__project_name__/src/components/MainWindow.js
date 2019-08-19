@@ -63,6 +63,10 @@ class LazyLoader extends Component {
 export default class MainWindow extends Component {
     state = {};
     render() {
+        console.log('-----------------test--------------------', Examples);
+        Object.values(Examples).forEach((Example) => {
+            console.log('example', Example);
+        });
         const style0 = {overflowX: 'hidden', margin: 10, padding: 20, background: 'lightblue'};
         const style1 = {padding: 20, margin: 10, minHeight: 800};
         return (
