@@ -142,19 +142,28 @@ def _install_electron(config, args):
 
 def _start_electron_dev(config, args):
     _generate(config = config, args = args)
-    cmd='''
-        #!/bin/bash
-        set -ex
-        cd generated/{project_name}
-        yarn electron-dev
-    '''.format(project_name = config['project_name'])
-    shell_cmd=ShellScript(cmd)
-    shell_cmd.start()
-    retcode=shell_cmd.wait()
 
-    if retcode != 0:
-        raise Exception(
-            'Shell script exited with non-zero return code: {}'.format(retcode))
+    watch_cmd=ShellScript('''
+        #!/bin/bash
+        reactopya watch
+    ''')
+    watch_cmd.start()
+
+    try:
+        cmd='''
+            #!/bin/bash
+            set -ex
+            cd generated/{project_name}
+            yarn electron-dev
+        '''.format(project_name = config['project_name'])
+        shell_cmd=ShellScript(cmd)
+        shell_cmd.start()
+        retcode=shell_cmd.wait()
+        if retcode != 0:
+            raise Exception(
+                'Shell script exited with non-zero return code: {}'.format(retcode))
+    finally:
+        watch_cmd.kill()
 
 
 def _install_server(config, args):
@@ -229,6 +238,7 @@ def _generate(config, args):
 
 def _watch(config, args):
     while True:
+        config = _load_config()
         _generate(config=config, args=args)
         time.sleep(5)
 
@@ -287,12 +297,13 @@ def _generate_directory(template_source_path, dest_path, config, do_render=True)
 
     for fname in fnames_existing:
         if fname not in fnames_dst:
-            print('Removing: {}'.format(os.path.join(dest_path, fname)))
-            num_files_changed = num_files_changed + 1
-            os.remove(os.path.join(dest_path, fname))
+            if (not fname.endswith('.pyc')):
+                print('Removing: {}'.format(os.path.join(dest_path, fname)))
+                num_files_changed = num_files_changed + 1
+                os.remove(os.path.join(dest_path, fname))
 
     for dirname in dirnames_existing:
-        if (dirname not in (dirnames_dst + ['node_modules', 'dist'])) and (not dirname.endswith('.egg-info')):
+        if (dirname not in (dirnames_dst + ['node_modules', 'dist', '__pycache__'])) and (not dirname.endswith('.egg-info')):
             print('Removing directory: {}'.format(
                 os.path.join(dest_path, dirname)))
             num_files_changed = num_files_changed + 1
@@ -307,10 +318,14 @@ def _generate_directory(template_source_path, dest_path, config, do_render=True)
                 num_files_changed = num_files_changed + 1
         else:
             txt = _read_text_file(path_src)
-            if do_render:
-                txt2 = Template(txt).render(config)
-            else:
+            if fname == 'reactopya.config.json':
+                txt = json.dumps(config, indent=4)
                 txt2 = txt
+            else:
+                if do_render:
+                    txt2 = Template(txt).render(config)
+                else:
+                    txt2 = txt
             num_files_processed = num_files_processed + 1
             if _write_text_file_if_changed(path_dst, txt2):
                 num_files_changed = num_files_changed + 1

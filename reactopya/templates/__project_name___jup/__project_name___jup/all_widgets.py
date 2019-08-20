@@ -6,6 +6,7 @@
 import ipywidgets as widgets
 from traitlets import Unicode, Dict
 import json
+import simplejson
 
 {% for widget in widgets -%}
 from {{ project_name }}_widgets import {{ widget.componentName }} as {{ widget.componentName }}Orig
@@ -19,7 +20,7 @@ def _json_parse(x):
 
 def _json_stringify(x):
     try:
-        return json.dumps(x)
+        return simplejson.dumps(x, ignore_nan=True)
     except:
         return ''
 

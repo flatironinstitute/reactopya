@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import MainWindow from "./components/MainWindow";
+const config = require('../reactopya.config.json');
 
 const ReactopyaClient = require('./ReactopyaClient');
 
@@ -12,7 +13,7 @@ const show_main_window = () => {
 
     setTimeout(function() {
         ReactDOM.render((
-            <MainWindow />
+            <MainWindow config={config} />
         ),
             document.getElementById("root")
         );

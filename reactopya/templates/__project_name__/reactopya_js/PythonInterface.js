@@ -100,7 +100,7 @@ export default class PythonInterface {
     _cleanup() {
         if (!this._reactComponent.props.jupyterModel) {
             if (!this._pythonProcess) return;
-            this._pythonProcess.close();
+            this._pythonProcess.stop();
             this._pythonProcess = null;
         }
     }

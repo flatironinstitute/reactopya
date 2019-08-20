@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import * as Examples from '../../{{ project_name }}_widgets';
+import * as allWidgets from '../../{{ project_name }}_widgets';
 import { Paper, Container, Grid } from "@material-ui/core";
 
 class LazyLoader extends Component {
@@ -63,24 +63,44 @@ class LazyLoader extends Component {
 export default class MainWindow extends Component {
     state = {};
     render() {
+        const { config } = this.props;
         const style0 = {overflowX: 'hidden', margin: 10, padding: 20, background: 'lightblue'};
         const style1 = {padding: 20, margin: 10, minHeight: 800};
+        let widgets = [];
+        let gallery_widgets = config.gallery_widgets;
+        if (!gallery_widgets) {
+            gallery_widgets = [];
+            for (let key in allWidgets) {
+                gallery_widgets.push({
+                    name: key
+                });
+            }
+        }
+        for (let a of config.gallery_widgets) {
+            let component = allWidgets[a.name];
+            widgets.push({
+                component: component,
+                title: a.title || component.title || a.name,
+                props: a.props || (component.reactopyaConfig||{}).galleryProps||{}
+            });
+        }
         return (
             <div style={style0}>
                 <Grid container style={style0}>
                     {
-                        Object.values(Examples).map((Example) => (
-                            <Grid key={Example.title} item xs={12} md={6} xl={4}>
+                        widgets.map((widget) => {
+                            let Comp = widget.component;
+                            return <Grid key={widget.title} item xs={12} md={6} xl={4}>
                                 <Paper style={style1}>
                                     <hr />
-                                    <h2>{Example.title}</h2>
+                                    <h2>{widget.title}</h2>
                                     <hr />
                                     <LazyLoader>
-                                        <Example {...((Example.reactopyaConfig||{}).galleryProps||{})} />
+                                        <Comp {...(widget.props)} />
                                     </LazyLoader>
                                 </Paper>
-                            </Grid>
-                        ))
+                            </Grid>;
+                        })
                     }
                 </Grid>
             </div>

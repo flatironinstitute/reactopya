@@ -31,8 +31,18 @@ function ReactopyaPythonProcess(componentModule, componentName, onReceiveMessage
                 if (ind >= 0) {
                     let txt = m_buf.slice(0, ind);
                     m_buf = m_buf.slice(ind + 1);
-                    let msg = JSON.parse(txt);
-                    onReceiveMessage && onReceiveMessage(msg);
+                    let msg;
+                    try {
+                        msg = JSON.parse(txt);
+                    }
+                    catch(err) {
+                        console.error('Error parsing message --------');
+                        console.error(txt);
+                        msg = null;
+                    }
+                    if (msg) {
+                        onReceiveMessage && onReceiveMessage(msg);
+                    }
                 }
                 else {
                     break;

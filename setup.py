@@ -13,7 +13,8 @@ setuptools.setup(
     include_package_data=True,
     install_requires=[
         "jinja2",
-        "numpy"
+        "numpy",
+        "simplejson"
     ],
     classifiers=(
         "Programming Language :: Python :: 3",

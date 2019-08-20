@@ -5,6 +5,7 @@ import select
 import json
 import time
 import numpy as np
+import simplejson
 
 class Component:
     def __init__(self):
@@ -100,7 +101,7 @@ class Component:
 
     # internal function to send message to javascript component
     def _send_message(self, msg):
-        print(json.dumps(msg), file=self.original_stdout)
+        print(simplejson.dumps(msg, ignore_nan=True), file=self.original_stdout)
         self._flush_all()
 
     def _flush_all(self):
