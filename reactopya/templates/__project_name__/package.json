@@ -15,9 +15,6 @@
       "install-electron": "echo \"installing electron\" && cd electron && yarn install"
     },
     "dependencies": {
-      {% for key, value in package_json.dependencies.items() -%}
-      "{{ key }}": "{{ value }}",
-      {% endfor -%}
       "@hot-loader/react-dom": "^16.8.6",
       "@material-ui/core": "^4.2.0",
       "@material-ui/icons": "^4.2.1",
@@ -28,6 +25,11 @@
       "react-icons": "^3.7.0",
       "react-lazyload": "^2.6.2",
       "ws": "^7.1.1"
+    },
+    "dependencies_to_add": {
+        {% for key, value in package_json.dependencies.items() -%}
+        "{{ key }}": "{{ value }}"{%- if not loop.last %},{% endif %}
+        {% endfor -%}
     },
     "devDependencies": {
       "@babel/core": "^7.4.5",

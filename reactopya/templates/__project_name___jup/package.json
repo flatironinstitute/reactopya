@@ -21,13 +21,15 @@
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "dependencies": {
-        {% for key, value in package_json.dependencies.items() -%}
-        "{{ key }}": "{{ value }}",
-        {% endfor -%}
         "@jupyter-widgets/base": "^1.0.0",
         "json-stable-stringify": "^1.0.1",
         "react": "^16.8.6",
         "react-dom": "^16.8.6"
+    },
+    "dependencies_to_add": {
+        {% for key, value in package_json.dependencies.items() -%}
+        "{{ key }}": "{{ value }}"{%- if not loop.last %},{% endif %}
+        {% endfor -%}
     },
     "devDependencies": {
         "@babel/core": "^7.4.5",

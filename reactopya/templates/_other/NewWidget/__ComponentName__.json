@@ -1,0 +1,9 @@
+{
+    "componentName": "{{ NewWidget.ComponentName }}",
+    "description": "{{ NewWidget.description }}",
+    "propsKeys": [],
+    "javaScriptStateKeys": [],
+    "pythonStateKeys": ["status", "status_message"],
+    "galleryProps": {
+    }
+}

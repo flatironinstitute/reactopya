@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import * as allWidgets from '../../{{ project_name }}_widgets';
-import { Paper, Container, Grid } from "@material-ui/core";
+import { Paper, Grid, IconButton } from "@material-ui/core";
+import { FaExpandArrowsAlt, FaCompressArrowsAlt } from "react-icons/fa";
 
 class LazyLoader extends Component {
     constructor(props) {
@@ -28,17 +29,18 @@ class LazyLoader extends Component {
         if (this.unmounted) return;
         setTimeout(() => {
             this.startChecking();
-        },1000);
+        }, 1000);
     }
 
     doCheck() {
         if (this.state.hasBeenVisible) return;
         if (this.isInViewport(this.container)) {
-            this.setState({hasBeenVisible: true});
+            this.setState({ hasBeenVisible: true });
         }
     }
 
     isInViewport(elem) {
+        if (!elem) return false;
         var bounding = elem.getBoundingClientRect();
         return (
             bounding.top >= 0 &&
@@ -61,28 +63,61 @@ class LazyLoader extends Component {
 }
 
 export default class MainWindow extends Component {
-    state = {};
+    state = {
+        expandedWidget: null
+    };
+    handleToggleExpand = (widget) => {
+        if (this.state.expandedWidget) {
+            this.setState({
+                expandedWidget: null
+            });
+        }
+        else {
+            this.setState({
+                expandedWidget: widget
+            });
+        }
+    }
     render() {
         const { config } = this.props;
-        const style0 = {overflowX: 'hidden', margin: 10, padding: 20, background: 'lightblue'};
-        const style1 = {padding: 20, margin: 10, minHeight: 800};
+        const { expandedWidget } = this.state;
+        const style0 = { overflowX: 'hidden', margin: 10, padding: 20, background: 'lightblue' };
+        const style1 = { padding: 20, margin: 10, minHeight: 800 };
         let widgets = [];
-        let gallery_widgets = config.gallery_widgets;
-        if (!gallery_widgets) {
-            gallery_widgets = [];
-            for (let key in allWidgets) {
-                gallery_widgets.push({
-                    name: key
+        if (expandedWidget) {
+            widgets.push(expandedWidget);
+        }
+        else {
+            let gallery_widgets = config.gallery_widgets;
+            if (!gallery_widgets) {
+                gallery_widgets = [];
+                for (let key in allWidgets) {
+                    gallery_widgets.push({
+                        name: key
+                    });
+                }
+            }
+            for (let a of config.gallery_widgets) {
+                let component = allWidgets[a.name];
+                widgets.push({
+                    component: component,
+                    title: a.title || component.title || a.name,
+                    props: a.props || (component.reactopyaConfig || {}).galleryProps || {}
                 });
             }
         }
-        for (let a of config.gallery_widgets) {
-            let component = allWidgets[a.name];
-            widgets.push({
-                component: component,
-                title: a.title || component.title || a.name,
-                props: a.props || (component.reactopyaConfig||{}).galleryProps||{}
-            });
+        let item_sizes = {
+            xs: 12,
+            md: 6,
+            xl: 4
+        };
+        let expandOrCollapseIcon = null;
+        if (expandedWidget) {
+            item_sizes.xs = item_sizes.md = item_sizes.xl = 12;
+            expandOrCollapseIcon = <FaCompressArrowsAlt />
+        }
+        else {
+            expandOrCollapseIcon = <FaExpandArrowsAlt />
         }
         return (
             <div style={style0}>
@@ -90,8 +125,17 @@ export default class MainWindow extends Component {
                     {
                         widgets.map((widget) => {
                             let Comp = widget.component;
-                            return <Grid key={widget.title} item xs={12} md={6} xl={4}>
+                            return <Grid key={widget.title} item {...item_sizes}>
                                 <Paper style={style1}>
+                                    <Grid container alignItems={'flex-start'} justify={'flex-end'} direction={'row'}>
+                                        <IconButton
+                                            onClick={() => { this.handleToggleExpand(widget) }}
+                                            size={'small'}
+                                        >
+                                            {expandOrCollapseIcon}
+                                        </IconButton>
+                                    </Grid>
+
                                     <hr />
                                     <h2>{widget.title}</h2>
                                     <hr />
