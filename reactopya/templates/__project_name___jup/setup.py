@@ -10,6 +10,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     scripts=[],
     install_requires=[
+        'simplejson',
         {% for value in setup_py.install_requires -%}
         '{{ value }}'{%- if not loop.last %},{% endif %}
         {% endfor -%}

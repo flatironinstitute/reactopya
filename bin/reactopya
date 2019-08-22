@@ -6,6 +6,7 @@ import json
 import shutil
 import argparse
 from reactopya import ShellScript, reactopya_templates_directory
+from reactopya import __version__ as reactopya_version
 from argparse import RawTextHelpFormatter
 import time
 import uuid
@@ -53,6 +54,11 @@ def main():
             'name': 'install-jupyter-extension',
             'func': _install_jupyter_extension,
             'description': 'Install the jupyter notebook extension'
+        },
+        {
+            'name': 'build-colab',
+            'func': _build_colab,
+            'description': 'Build the package for use in google colab'
         },
         {
             'name': 'install-server',
@@ -267,10 +273,7 @@ def _install_jupyter_extension(config, args):
     cmd = '''
         #!/bin/bash
         set -ex
-        cd generated/{project_name}
-        pip install -e .
-        yarn install
-        cd ../{project_name}_jup
+        cd generated/{project_name}_jup
         pip install -e .
         yarn install
         yarn install-extension
@@ -286,6 +289,24 @@ def _install_jupyter_extension(config, args):
     print('You may now import {}_jup within a jupyter notebook.'.format(
         config['project_name']))
 
+def _build_colab(config, args):
+    _generate(config=config, args=args)
+    cmd = '''
+        #!/bin/bash
+        set -ex
+        cd generated/{project_name}_colab
+        yarn install
+    '''.format(project_name=config['project_name'])
+    shell_cmd = ShellScript(cmd)
+    shell_cmd.start()
+    retcode = shell_cmd.wait()
+
+    if retcode != 0:
+        raise Exception(
+            'Shell script exited with non-zero return code: {}'.format(retcode))
+
+    print('You may now publish the generated/{}_colab package to pypi for use in colab.'.format(
+        config['project_name']))
 
 def _generate(config, args):
     (num_processed, num_changed) = _generate_directory(
@@ -326,6 +347,8 @@ def _load_config():
         dep = pj.get('dependencies', {})
         for key, val in dep.items():
             config['package_json']['dependencies'][key] = val
+    
+    config['reactopya_version'] = reactopya_version
 
     config['widgets'] = _load_widgets_config()
     return config
@@ -363,6 +386,9 @@ def _generate_directory(template_source_path, dest_path, config, do_render=True)
 
     if len(fnames) == 1 and fnames[0] == '.widgets_go_here':
         return _generate_directory('widgets', dest_path, config, do_render=False)
+    
+    if len(fnames) == 1 and fnames[0] == '.reactopya_js_goes_here':
+        return _generate_directory(os.path.join(reactopya_templates_directory(), '_other', 'reactopya_js'), dest_path, config, do_render=False)
 
     if not os.path.exists(dest_path):
         os.mkdir(dest_path)

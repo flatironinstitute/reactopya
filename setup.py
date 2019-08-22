@@ -1,10 +1,12 @@
 import setuptools
+import os
 
-pkg_name = "reactopya"
+with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'VERSION')) as version_file:
+    version = version_file.read().strip()
 
 setuptools.setup(
-    name=pkg_name,
-    version="0.2.8",
+    name="reactopya",
+    version=version,
     author="Jeremy Magland",
     author_email="jmagland@flatironinstitute.org",
     description="",
