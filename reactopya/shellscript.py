@@ -97,7 +97,6 @@ class ShellScript():
             self._process.wait(timeout=1)
         except:
             print('WARNING: unable to kill shell script.')
-            pass
 
     def stopWithSignal(self, sig, timeout) -> bool:
         if not self.isRunning():
