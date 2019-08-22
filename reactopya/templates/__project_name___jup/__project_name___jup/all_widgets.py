@@ -9,7 +9,7 @@ import json
 import simplejson
 
 {% for widget in widgets -%}
-from {{ project_name }}_widgets import {{ widget.componentName }} as {{ widget.componentName }}Orig
+from .widgets import {{ widget.componentName }} as {{ widget.componentName }}Orig
 {% endfor %}
 
 def _json_parse(x):
@@ -55,6 +55,9 @@ class {{ widget.componentName }}(widgets.DOMWidget):
         self.observe(self._on_change)
         self.set_trait('_props', dict(**kwargs))
         self._X.init_jupyter()
+
+    def show(self):
+        display(self)
 
     def _handle_python_state_changed(self):
         for key in [{%- for name in widget.pythonStateKeys -%}'{{ name }}'{%- if not loop.last %}, {% endif %}{% endfor %}]:

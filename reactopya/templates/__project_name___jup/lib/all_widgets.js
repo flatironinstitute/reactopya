@@ -7,7 +7,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 
 {% for widget in widgets -%}
-import { default as {{ widget.componentName }} } from '../widgets/{{ widget.componentName }}/{{ widget.componentName }}';
+import { default as {{ widget.componentName }} } from '../{{ project_name }}_jup/widgets/{{ widget.componentName }}/{{ widget.componentName }}';
 {% endfor %}
 
 var widgets = require('@jupyter-widgets/base');

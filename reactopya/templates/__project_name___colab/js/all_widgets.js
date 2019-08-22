@@ -9,7 +9,7 @@ const stable_stringify = require('json-stable-stringify');
 
 
 {% for widget in widgets -%}
-import { default as {{ widget.componentName }} } from '../widgets/{{ widget.componentName }}/{{ widget.componentName }}';
+import { default as {{ widget.componentName }} } from '../{{ project_name }}_colab/widgets/{{ widget.componentName }}/{{ widget.componentName }}';
 {% endfor %}
 
 if (!window.reactopya_colab) {

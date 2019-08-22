@@ -11,7 +11,7 @@ import base64
 import os
 
 {% for widget in widgets -%}
-from {{ project_name }}_widgets import {{ widget.componentName }} as {{ widget.componentName }}Orig
+from .widgets import {{ widget.componentName }} as {{ widget.componentName }}Orig
 {% endfor %}
 
 def _json_parse(x):
