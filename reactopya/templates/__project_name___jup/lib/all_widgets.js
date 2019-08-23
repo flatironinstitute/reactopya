@@ -3,19 +3,14 @@
 // Do not edit manually
 ////////////////////////////////////////////////////////////////////
 
-import React from 'react';
-import ReactDOM from 'react-dom';
-
-{% for widget in widgets -%}
-import { default as {{ widget.componentName }} } from '../{{ project_name }}_jup/widgets/{{ widget.componentName }}/{{ widget.componentName }}';
-{% endfor %}
-
 var widgets = require('@jupyter-widgets/base');
 var _ = require('lodash');
 
+require('../dist/bundle.js');
+
 {% for widget in widgets %}
-export class {{ widget.componentName }}Model extends widgets.DOMWidgetModel {
-    defaults = _.extend(widgets.DOMWidgetModel.prototype.defaults(), {
+var {{ widget.componentName }}Model = widgets.DOMWidgetModel.extend({
+    defaults: _.extend(widgets.DOMWidgetModel.prototype.defaults(), {
         _model_name : '{{ widget.componentName }}Model',
         _view_name : '{{ widget.componentName }}View',
         _model_module : '{{ project_name }}_jup',
@@ -38,18 +33,25 @@ export class {{ widget.componentName }}Model extends widgets.DOMWidgetModel {
 
         __dummy: ''
     })
-}
+});
 
 // Custom View. Renders the widget model.
-export class {{ widget.componentName }}View extends widgets.DOMWidgetView {
-    render() {
+var {{ widget.componentName }}View = widgets.DOMWidgetView.extend({
+    render: function() {
         this.div=document.createElement('div');
         this.el.appendChild(this.div);
 
-        ReactDOM.render(
-            <{{ widget.componentName }} jupyterModel={this.model} {...this.model.get('_props')} />,
-            this.div
-        );
+        let props = this.model.get('_props');
+        props.jupyterModel = this.model;
+        window.reactopya.widgets.{{ widget.componentName }}.render(this.div, props);
     }
-}
+});
 {% endfor %}
+
+
+module.exports = {
+{% for widget in widgets -%}
+    {{ widget.componentName }}Model: {{ widget.componentName }}Model,
+    {{ widget.componentName }}View: {{ widget.componentName }}View{%- if not loop.last %},{% endif %}
+{% endfor %}
+};

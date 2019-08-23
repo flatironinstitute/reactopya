@@ -3,39 +3,23 @@
 // Do not edit manually
 ////////////////////////////////////////////////////////////////////
 
-import React from 'react';
-import ReactDOM from 'react-dom';
-const stable_stringify = require('json-stable-stringify');
+require('../../{{ project_name }}_bundle/dist/bundle.js');
 
+window.reactopya_colab = window.reactopya_colab || {};
+window.reactopya_colab.widgets = window.reactopya_colab.widgets || {};
 
-{% for widget in widgets -%}
-import { default as {{ widget.componentName }} } from '../{{ project_name }}_colab/widgets/{{ widget.componentName }}/{{ widget.componentName }}';
-{% endfor %}
-
-if (!window.reactopya_colab) {
-    window.reactopya_colab = {
-        widgets: {}
-    }
-}
 {% for widget in widgets %}
 window.reactopya_colab.widgets['{{ widget.componentName }}'] = {
     render: function(props, onSaveChanges) {
-        return _do_render({{ widget.componentName }}, props, onSaveChanges);
+        let model = new ReactopyaColabWidgetModel();
+        model.onSaveChanges(onSaveChanges);
+        let div = document.createElement('div');
+        document.querySelector("#output-area").appendChild(div);
+        props.jupyterModel = model;
+        window.reactopya.widgets.{{ widget.componentName }}.render(div, props);
     }
 }
 {% endfor %}
-
-function _do_render(WidgetComponent, props, onSaveChanges) {
-    let model = new ReactopyaColabWidgetModel();
-    model.onSaveChanges(onSaveChanges);
-    let div = document.createElement('div');
-    document.querySelector("#output-area").appendChild(div);
-    ReactDOM.render(
-        <WidgetComponent jupyterModel={model} {...props} />,
-        div
-    );
-    return model;
-}
 
 class ReactopyaColabWidgetModel {
     constructor() {

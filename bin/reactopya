@@ -18,7 +18,7 @@ def main():
         {
             'name': 'init-project',
             'func': _init_project,
-            'description': 'Initialize a new reactopya project (this command is work in progress)'
+            'description': 'Initialize a new bare-bones reactopya project'
         },
         {
             'name': 'new-widget',
@@ -43,17 +43,22 @@ def main():
         {
             'name': 'install-electron',
             'func': _install_electron,
-            'description': 'Install electron (must be called prior to running start-electron-dev)',
+            'description': 'Install electron (must be called prior to running start-gallery-dev)',
         },
         {
-            'name': 'start-electron-dev',
-            'func': _start_electron_dev,
-            'description': 'Start the electron application in development mode (use install-electron first)'
+            'name': 'start-gallery-dev',
+            'func': _start_gallery_dev,
+            'description': 'Start the electron gallery application in development mode (use install-electron first)'
         },
         {
             'name': 'install-jupyter-extension',
             'func': _install_jupyter_extension,
             'description': 'Install the jupyter notebook extension'
+        },
+        {
+            'name': 'install-jupyter-labextension',
+            'func': _install_jupyter_labextension,
+            'description': 'Install the jupyter lab extension'
         },
         {
             'name': 'build-colab',
@@ -87,6 +92,7 @@ def main():
         description="Reactopya command-line utility", formatter_class=RawTextHelpFormatter)
     parser.add_argument(
         'command', help='One of the following:\n\n{}\n'.format(command_description))
+    parser.add_argument('--verbose', action='store_true', help='Turn on verbose output')
 
     args = parser.parse_args()
     command = args.command
@@ -149,7 +155,7 @@ def _install_electron(config, args):
     cmd = '''
         #!/bin/bash
         set -ex
-        cd generated/{project_name}
+        cd generated/{project_name}_gallery
         pip install -e .
         yarn install
         yarn install-electron
@@ -162,10 +168,10 @@ def _install_electron(config, args):
         raise Exception(
             'Shell script exited with non-zero return code: {}'.format(retcode))
 
-    print('You may now run "reactopya start-electron-dev".')
+    print('You may now run "reactopya start-gallery-dev".')
 
 
-def _start_electron_dev(config, args):
+def _start_gallery_dev(config, args):
     _generate(config=config, args=args)
 
     watch_cmd = ShellScript('''
@@ -178,7 +184,7 @@ def _start_electron_dev(config, args):
         cmd = '''
             #!/bin/bash
             set -ex
-            cd generated/{project_name}
+            cd generated/{project_name}_gallery
             yarn electron-dev
         '''.format(project_name=config['project_name'])
         shell_cmd = ShellScript(cmd)
@@ -188,7 +194,8 @@ def _start_electron_dev(config, args):
             raise Exception(
                 'Shell script exited with non-zero return code: {}'.format(retcode))
     finally:
-        os.unlink('_watching')
+        if os.path.exists('_watching'):
+            os.unlink('_watching')
 
 
 def _install_server(config, args):
@@ -196,7 +203,7 @@ def _install_server(config, args):
     cmd = '''
         #!/bin/bash
         set -ex
-        cd generated/{project_name}
+        cd generated/{project_name}_gallery
         pip install -e .
         yarn install
         yarn build
@@ -217,7 +224,7 @@ def _start_server(config, args):
     cmd = '''
         #!/bin/bash
         set -ex
-        cd generated/{project_name}
+        cd generated/{project_name}_gallery
         yarn start
     '''.format(project_name=config['project_name'])
     shell_cmd = ShellScript(cmd)
@@ -246,7 +253,7 @@ def _new_widget(config, args):
     )
     try:
         (num_processed, num_changed) = _generate_directory(
-            os.path.join(reactopya_templates_directory(), '_other', 'NewWidget'), dirname, config=config)
+            os.path.join(reactopya_templates_directory(), '_other', 'NewWidget'), dirname, config=config, args=args)
         if num_changed > 0:
             print('{} files processed, {} changed'.format(
                 num_processed, num_changed))
@@ -273,9 +280,19 @@ def _install_jupyter_extension(config, args):
     cmd = '''
         #!/bin/bash
         set -ex
-        cd generated/{project_name}_jup
-        pip install -e .
+        cd generated/{project_name}_bundle
+        echo "======================================= BUNDLE INSTALL ======================================="
         yarn install
+        echo "======================================= BUNDLE BUILD ======================================="
+        yarn build
+        cd ../{project_name}_jup
+        pip install -e .
+        yarn copy-bundle
+        echo "======================================= JUPYTER INSTALL ======================================="
+        yarn install
+        echo "======================================= JUPYTER BUILD ======================================="
+        yarn build
+        echo "======================================= JUPYTER EXTENSION INSTALL ======================================="
         yarn install-extension
     '''.format(project_name=config['project_name'])
     shell_cmd = ShellScript(cmd)
@@ -286,7 +303,38 @@ def _install_jupyter_extension(config, args):
         raise Exception(
             'Shell script exited with non-zero return code: {}'.format(retcode))
 
-    print('You may now import {}_jup within a jupyter notebook.'.format(
+    print('You may now import {}_jup within jupyter notebook.'.format(
+        config['project_name']))
+
+def _install_jupyter_labextension(config, args):
+    _generate(config=config, args=args)
+    cmd = '''
+        #!/bin/bash
+        set -ex
+        cd generated/{project_name}_bundle
+        echo "======================================= BUNDLE INSTALL ======================================="
+        yarn install
+        echo "======================================= BUNDLE BUILD ======================================="
+        yarn build
+        cd ../{project_name}_jup
+        pip install -e .
+        yarn copy-bundle
+        echo "======================================= JUPYTER INSTALL ======================================="
+        yarn install
+        echo "======================================= JUPYTER BUILD ======================================="
+        yarn build
+        echo "======================================= JUPYTER LABEXTENSION INSTALL ======================================="
+        yarn install-labextension
+    '''.format(project_name=config['project_name'])
+    shell_cmd = ShellScript(cmd)
+    shell_cmd.start()
+    retcode = shell_cmd.wait()
+
+    if retcode != 0:
+        raise Exception(
+            'Shell script exited with non-zero return code: {}'.format(retcode))
+
+    print('You may now import {}_jup within jupyter notebook.'.format(
         config['project_name']))
 
 def _build_colab(config, args):
@@ -294,8 +342,16 @@ def _build_colab(config, args):
     cmd = '''
         #!/bin/bash
         set -ex
-        cd generated/{project_name}_colab
+        cd generated/{project_name}_bundle
+        echo "======================================= BUNDLE INSTALL ======================================="
         yarn install
+        echo "======================================= BUNDLE BUILD ======================================="
+        yarn build
+        cd ../{project_name}_colab
+        echo "======================================= COLAB INSTALL ======================================="
+        yarn install
+        echo "======================================= COLAB BUILD ======================================="
+        yarn build
     '''.format(project_name=config['project_name'])
     shell_cmd = ShellScript(cmd)
     shell_cmd.start()
@@ -310,7 +366,7 @@ def _build_colab(config, args):
 
 def _generate(config, args):
     (num_processed, num_changed) = _generate_directory(
-        reactopya_templates_directory(), 'generated', config=config)
+        reactopya_templates_directory(), 'generated', config=config, args=args)
     if num_changed > 0:
         print('{} files processed, {} changed'.format(
             num_processed, num_changed))
@@ -369,7 +425,9 @@ def _load_widgets_config():
     return ret
 
 
-def _generate_directory(template_source_path, dest_path, config, do_render=True):
+def _generate_directory(template_source_path, dest_path, config, args, do_render=True):
+    if args.verbose:
+        print('GENERATE DIRECTORY: {} -> '.format(template_source_path, dest_path))
     num_files_processed = 0
     num_files_changed = 0
     fnames = [
@@ -385,10 +443,10 @@ def _generate_directory(template_source_path, dest_path, config, do_render=True)
                     for dirname in dirnames]
 
     if len(fnames) == 1 and fnames[0] == '.widgets_go_here':
-        return _generate_directory('widgets', dest_path, config, do_render=False)
+        return _generate_directory('widgets', dest_path, config, args=args, do_render=False)
     
     if len(fnames) == 1 and fnames[0] == '.reactopya_js_goes_here':
-        return _generate_directory(os.path.join(reactopya_templates_directory(), '_other', 'reactopya_js'), dest_path, config, do_render=False)
+        return _generate_directory(os.path.join(reactopya_templates_directory(), '_other', 'reactopya_js'), dest_path, config, args=args, do_render=do_render)
 
     if not os.path.exists(dest_path):
         os.mkdir(dest_path)
@@ -444,6 +502,7 @@ def _generate_directory(template_source_path, dest_path, config, do_render=True)
                 os.path.join(template_source_path, dirname),
                 os.path.join(dest_path, dirnames_dst[i]),
                 config=config,
+                args=args,
                 do_render=do_render
             )
             num_files_processed = num_files_processed + nump

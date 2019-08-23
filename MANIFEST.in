@@ -1,2 +1,2 @@
-include VERSION
+include reactopya/VERSION
 recursive-include reactopya/templates *

@@ -6,7 +6,6 @@
     "license": "{{ license }}",
     "main": "src/index.js",
     "scripts": {
-      "test": "echo \"Error: no test specified\" && exit 1",
       "dev": "echo \"starting development server\" && webpack-dev-server --hot",
       "chrome": "echo \"Opening as app in chrome. This should be used with yarn dev.\" && google-chrome --app=http://localhost:5050",
       "build": "echo \"building bundle\" && NODE_OPTIONS=--max_old_space_size=4096 webpack --devtool source-map",

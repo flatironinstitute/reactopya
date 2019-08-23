@@ -1,7 +1,7 @@
 import setuptools
 import os
 
-with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'VERSION')) as version_file:
+with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'reactopya', 'VERSION')) as version_file:
     version = version_file.read().strip()
 
 setuptools.setup(

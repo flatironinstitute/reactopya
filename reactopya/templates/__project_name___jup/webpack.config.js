@@ -7,65 +7,8 @@ var path = require('path');
 var version = require('./package.json').version;
 
 var rules = [
-    {
-        // JavaScript rules.
-        test: /\.js$/,
-        exclude: /node_modules/,
-        use: {
-            loader: 'babel-loader',
-            options: {
-                presets: [
-                    ["@babel/preset-env",
-                        {
-                            "targets": {
-                                "chrome": "70"
-                            }
-                        }],
-                    "@babel/preset-react"
-                ],
-                plugins: [
-                    "@babel/plugin-proposal-class-properties"
-                ]
-            }
-        }
-    },
-    {
-        // CSS files
-        test: /\.css$/,
-        use: [
-            { loader: 'style-loader' },
-            { loader: 'css-loader' }
-        ],
-    },
-    {
-        // Some image formats so you can import images
-        test: /\.(png|gif|jpg|svg)$/,
-        use: {
-            loader: 'url-loader',
-            options: {
-                limit: 10000000,
-            },
-        },
-    }
-];
-
-/*
-The react alias below is needed because otherwise it could resolve to
-the wrong one in a subdirectory. Then I get a react hooks error
-because 2 different reacts are being used in the same app.
-See:
-https://reactjs.org/warnings/invalid-hook-call-warning.html
-https://github.com/facebook/react/issues/13991
-*/
-
-const resolve = {
-    extensions: ['.css', '.js', '.json', '.png', '.gif', '.jpg', '.svg'],
-    alias: {
-        'reactopya': __dirname + '/reactopya_js',
-        'react': __dirname + '/node_modules/react' // See above
-    }
-};
-
+    { test: /\.css$/, use: ['style-loader', 'css-loader']}
+]
 
 module.exports = [
     {// Notebook extension
@@ -99,7 +42,6 @@ module.exports = [
         module: {
             rules: rules
         },
-        resolve: resolve,
         externals: ['@jupyter-widgets/base']
     },
     {// Embeddable bundle
@@ -127,7 +69,6 @@ module.exports = [
         module: {
             rules: rules
         },
-        resolve: resolve,
         externals: ['@jupyter-widgets/base']
     }
 ];
