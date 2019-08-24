@@ -17,6 +17,7 @@ window.reactopya_colab.widgets['{{ widget.componentName }}'] = {
         document.querySelector("#output-area").appendChild(div);
         props.jupyterModel = model;
         window.reactopya.widgets.{{ widget.componentName }}.render(div, props);
+        return model;
     }
 }
 {% endfor %}

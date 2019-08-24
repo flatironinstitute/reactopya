@@ -13,5 +13,5 @@ let mainWindow;
         }
     });
 
-    await mainWindow.loadURL(`http://localhost:5050`);
+    await mainWindow.loadURL(`http://localhost:5050?widget=${process.env.widget}`);
 })();

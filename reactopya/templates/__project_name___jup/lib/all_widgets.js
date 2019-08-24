@@ -9,35 +9,47 @@ var _ = require('lodash');
 require('../dist/bundle.js');
 
 {% for widget in widgets %}
-var {{ widget.componentName }}Model = widgets.DOMWidgetModel.extend({
-    defaults: _.extend(widgets.DOMWidgetModel.prototype.defaults(), {
-        _model_name : '{{ widget.componentName }}Model',
-        _view_name : '{{ widget.componentName }}View',
-        _model_module : '{{ project_name }}_jup',
-        _view_module : '{{ project_name }}_jup',
-        _model_module_version : '{{ version }}',
-        _view_module_version : '{{ version }}',
+class {{ widget.componentName }}Model extends widgets.DOMWidgetModel {
+    initialize(attributes, options) {
+        super.initialize(attributes, options);
+        this.listenTo(this, 'msg:custom', _.bind(this.handleMessage, this));
+    }
+    handleMessage(content) {
+        console.log('--------------- got message', content);
+    }
+    defaults() {
+        return _.extend(widgets.DOMWidgetModel.prototype.defaults(), {
+            _model_name : '{{ widget.componentName }}Model',
+            _view_name : '{{ widget.componentName }}View',
+            _model_module : '{{ project_name }}_jup',
+            _view_module : '{{ project_name }}_jup',
+            _model_module_version : '{{ version }}',
+            _view_module_version : '{{ version }}',
 
-        // Props
-        _props: {},
+            // Props
+            _props: {},
 
-        // Python state
-        {% for name in widget.pythonStateKeys -%}
-        {{ name }}: '',
-        {% endfor %}
+            // Python state
+            {% for name in widget.pythonStateKeys -%}
+            {{ name }}: '',
+            {% endfor %}
 
-        // JavaScript state
-        {% for name in widget.javaScriptStateKeys -%}
-        {{ name }}: '',
-        {% endfor %}
+            // JavaScript state
+            {% for name in widget.javaScriptStateKeys -%}
+            {{ name }}: '',
+            {% endfor %}
 
-        __dummy: ''
-    })
-});
+            __dummy: ''
+        });
+    }
+}
 
 // Custom View. Renders the widget model.
-var {{ widget.componentName }}View = widgets.DOMWidgetView.extend({
-    render: function() {
+class {{ widget.componentName }}View extends widgets.DOMWidgetView {
+    initialize(parameters) {
+        super.initialize(parameters);
+    }
+    render() {
         this.div=document.createElement('div');
         this.el.appendChild(this.div);
 
@@ -45,7 +57,7 @@ var {{ widget.componentName }}View = widgets.DOMWidgetView.extend({
         props.jupyterModel = this.model;
         window.reactopya.widgets.{{ widget.componentName }}.render(this.div, props);
     }
-});
+}
 {% endfor %}
 
 

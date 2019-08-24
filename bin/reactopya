@@ -6,7 +6,7 @@ import json
 import shutil
 import argparse
 from reactopya import ShellScript, reactopya_templates_directory
-from reactopya import __version__ as reactopya_version
+import reactopya
 from argparse import RawTextHelpFormatter
 import time
 import uuid
@@ -93,6 +93,7 @@ def main():
     parser.add_argument(
         'command', help='One of the following:\n\n{}\n'.format(command_description))
     parser.add_argument('--verbose', action='store_true', help='Turn on verbose output')
+    parser.add_argument('--widget', default='', help='Name of individual widget to display', required=False)
 
     args = parser.parse_args()
     command = args.command
@@ -185,8 +186,9 @@ def _start_gallery_dev(config, args):
             #!/bin/bash
             set -ex
             cd generated/{project_name}_gallery
+            export widget="{widget}"
             yarn electron-dev
-        '''.format(project_name=config['project_name'])
+        '''.format(project_name=config['project_name'], widget=args.widget)
         shell_cmd = ShellScript(cmd)
         shell_cmd.start()
         retcode = shell_cmd.wait()
@@ -334,7 +336,7 @@ def _install_jupyter_labextension(config, args):
         raise Exception(
             'Shell script exited with non-zero return code: {}'.format(retcode))
 
-    print('You may now import {}_jup within jupyter notebook.'.format(
+    print('You may now import {}_jup within jupyter lab. Important: be sure to also install the ipywidgets jupyter lab extension (see the README).'.format(
         config['project_name']))
 
 def _build_colab(config, args):
@@ -404,7 +406,7 @@ def _load_config():
         for key, val in dep.items():
             config['package_json']['dependencies'][key] = val
     
-    config['reactopya_version'] = reactopya_version
+    config['reactopya_version'] = reactopya.__version__
 
     config['widgets'] = _load_widgets_config()
     return config

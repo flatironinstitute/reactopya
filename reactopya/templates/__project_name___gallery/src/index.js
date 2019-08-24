@@ -1,24 +1,46 @@
 import React from "react";
 import ReactDOM from "react-dom";
-import MainWindow from "./components/MainWindow";
+import MainWindow, { IndividualWidget } from "./components/MainWindow";
 const config = require('../reactopya.config.json');
 
 const ReactopyaClient = require('./ReactopyaClient');
 
-const show_main_window = () => {
+function parse_url_params() {
+	var match;
+	var pl     = /\+/g;  // Regex for replacing addition symbol with a space
+	var search = /([^&=]+)=?([^&]*)/g;
+	var decode = function (s) { return decodeURIComponent(s.replace(pl, " ")); };
+	var query  = window.location.search.substring(1);
+	var url_params = {};
+	while (match = search.exec(query))
+		url_params[decode(match[1])] = decode(match[2]);
+	return url_params;
+}
+
+
+const main = () => {
     if (!window.using_electron) {
         window.reactopya_client = new ReactopyaClient();
         window.reactopya_client.connect(`ws://${window.location.host}`);
     }
 
     setTimeout(function() {
-        ReactDOM.render((
-            <MainWindow config={config} />
-        ),
-            document.getElementById("root")
-        );
-    }, 500);
-    
-};
+        let url_params = parse_url_params();
+        if (url_params.widget) {
+            ReactDOM.render((
+                <IndividualWidget widgetName={url_params.widget} config={config} />
+            ),
+                document.getElementById("root")
+            );
+        }
+        else {
+            ReactDOM.render((
+                <MainWindow config={config} />
+            ),
+                document.getElementById("root")
+            );
+        }
+    }, 100);
+}
 
-show_main_window();
+main();

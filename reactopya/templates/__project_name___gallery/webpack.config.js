@@ -5,57 +5,54 @@ var version = require('./package.json').version;
 
 module.exports = [];
 
-module.exports.push({
-    // This is where our app starts.
-    entry: './src/index.js',
-    // module is where we
-    // define all the rules for how webpack will deal with things.
-    module: {
-        // rules takes an array, each item containing the respective rules
-        rules: [
-            {
-                // First up, our JavaScript rules.
-                test: /\.js$/,
-                // // Don't bother spending time transpiling your installed packages
-                exclude: /node_modules/,
-                // Use babel to transpile our JS.
-                use: {
-                    loader: 'babel-loader',
-                    options: {
-                        presets: [
-                            ["@babel/preset-env",
-                                {
-                                    "targets": {
-                                        "chrome": "75"
-                                    }
-                                }],
-                            "@babel/preset-react"
-                        ],
-                        plugins: ["@babel/plugin-proposal-class-properties", "react-hot-loader/babel"]
-                    }
-                }
-            },
-            {
-                // CSS files
-                test: /\.css$/,
-                use: [
-                    { loader: 'style-loader' },
-                    { loader: 'css-loader' }
+const rules = [
+    {
+        // First up, our JavaScript rules.
+        test: /\.js$/,
+        // // Don't bother spending time transpiling your installed packages
+        exclude: /node_modules/,
+        // Use babel to transpile our JS.
+        use: {
+            loader: 'babel-loader',
+            options: {
+                presets: [
+                    ["@babel/preset-env",
+                        {
+                            "targets": {
+                                "chrome": "75"
+                            }
+                        }],
+                    "@babel/preset-react"
                 ],
-            },
-            {
-                // Some image formats so you can import images
-                test: /\.(png|gif|jpg|svg)$/,
-                use: {
-                    loader: 'url-loader',
-                    options: {
-                        limit: 10000000,
-                    },
-                },
-            },
+                plugins: ["@babel/plugin-proposal-class-properties", "react-hot-loader/babel"]
+            }
+        }
+    },
+    {
+        // CSS files
+        test: /\.css$/,
+        use: [
+            { loader: 'style-loader' },
+            { loader: 'css-loader' }
         ],
     },
-    // Here we define explicitly the file types we intend to deal with
+    {
+        // Some image formats so you can import images
+        test: /\.(png|gif|jpg|svg)$/,
+        use: {
+            loader: 'url-loader',
+            options: {
+                limit: 10000000,
+            },
+        },
+    },
+];
+
+module.exports.push({
+    entry: './src/index.js',
+    module: {
+        rules: rules
+    },
     resolve: {
         extensions: ['.css', '.js', '.json', '.png', '.gif', '.jpg', '.svg'],
         alias: {
@@ -63,14 +60,9 @@ module.exports.push({
             'reactopya': __dirname + '/reactopya_js'
         }
     },
-    // This is where we define how everything gets output.
-    // dist is a common output folder, and it should be gitignored.
     output: {
         path: path.resolve(__dirname, 'dist/'),
         publicPath: '',
-        // You can do fun things here like use the [hash] keyword to generate unique
-        // filenames, but for this purpose reactopya.js is fine. This file and path will
-        // be what you put in package.json's "main" field
         filename: '{{ project_name }}.js',
         // This field determines how things are importable when installed from other
         // sources. UMD may not be correct now and there is an open issue to fix this,

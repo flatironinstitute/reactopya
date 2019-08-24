@@ -62,6 +62,24 @@ class LazyLoader extends Component {
     }
 }
 
+export class IndividualWidget extends Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+
+        }
+    }
+    render() {        
+        const { config, widgetName } = this.props;
+        const Comp = allWidgets[widgetName];
+        if (!Comp) {
+            return <div>Widget not found: {widgetName}</div>;
+        }
+        let props = (Comp.reactopyaConfig || {}).galleryProps || {};
+        return <Comp {...props} />;
+    }
+}
+
 export default class MainWindow extends Component {
     state = {
         expandedWidget: null
