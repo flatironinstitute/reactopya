@@ -11,7 +11,7 @@ setuptools.setup(
     include_package_data=True,
     scripts=[],
     install_requires=[
-        'reactopya=={{ reactopya_version }}',
+        'reactopya',
         'simplejson',
         {% for value in setup_py.install_requires -%}
         '{{ value }}'{%- if not loop.last %},{% endif %}

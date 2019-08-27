@@ -10,65 +10,53 @@ window.reactopya_colab.widgets = window.reactopya_colab.widgets || {};
 
 {% for widget in widgets %}
 window.reactopya_colab.widgets['{{ widget.componentName }}'] = {
-    render: function(props, onSaveChanges) {
-        let model = new ReactopyaColabWidgetModel();
-        model.onSaveChanges(onSaveChanges);
+    render: function(props, onJavaScriptStateChanged) {
+        let model = new JavaScriptPythonStateModel();
+        model.onJavaScriptStateChanged(onJavaScriptStateChanged);
         let div = document.createElement('div');
         document.querySelector("#output-area").appendChild(div);
-        props.jupyterModel = model;
+        props.javaScriptPythonStateModel = model;
         window.reactopya.widgets.{{ widget.componentName }}.render(div, props);
         return model;
     }
 }
 {% endfor %}
 
-class ReactopyaColabWidgetModel {
+class JavaScriptPythonStateModel {
     constructor() {
-        this._changeHandlers = {};
-        this._data = {}; // values are all strings
-        this._changes_to_save = {};
-        this._save_changes_handlers = [];
+        this._pythonStateStringified = {};
+        this._javaScriptStateStringified = {};
+        this._pythonStateChangedHandlers = [];
+        this._javaScriptStateChangedHandlers = [];
     }
-    on(name, handler) {
-        if (name.startsWith('change:')) {
-            let key = name.slice('change:'.length);
-            if (!this._changeHandlers[key])
-                this._changeHandlers[key] = [];
-            this._changeHandlers[key].push(handler);
-        }
-        else {
-            console.warn(`Unrecognized name in ColabJupyterModel.on: ${name}`);
-        }
+    setPythonState(state) {
+        this._setStateHelper(state, this._pythonStateStringified, this._pythonStateChangedHandlers);
     }
-    onSaveChanges(handler) {
-        this._save_changes_handlers.push(handler);
+    setJavaScriptState(state) {
+        this._setStateHelper(state, this._javaScriptStateStringified, this._javaScriptStateChangedHandlers);
     }
-    get(key, defaultval) {
-        if (key in this._data)
-            return this._data[key];
-        else
-            return defaultval;
+    onPythonStateChanged(handler) {
+        this._pythonStateChangedHandlers.push(handler);
     }
-    set(key, val) {
-        if (key in this._data) {
-            if (val == this._data[key])
-                return;
-        }
-        this._data[key] = val;
-        this._changes_to_save[key] = val;
-        if (key in this._changeHandlers) {
-            for (let handler of this._changeHandlers[key]) {
-                handler();
+    onJavaScriptStateChanged(handler) {
+        this._javaScriptStateChangedHandlers.push(handler);
+    }
+    _setStateHelper(state, existingStateStringified, handlers) {
+        let changedState = {};
+        let somethingChanged = false;
+        for (let key in state) {
+            let val = state[key];
+            let valstr = JSON.stringify(val);
+            if (valstr !== existingStateStringified[key]) {
+                existingStateStringified[key] = val;
+                changedState[key] = JSON.parse(valstr);
+                somethingChanged = true;
             }
         }
-        return null;
-    }
-    save_changes() {
-        for (let handler of this._save_changes_handlers) {
-            handler(this._changes_to_save);
+        if (somethingChanged) {
+            for (let handler of handlers) {
+                handler(changedState);
+            }
         }
-        this._changes_to_save = {};
-        return null;
     }
-
 }

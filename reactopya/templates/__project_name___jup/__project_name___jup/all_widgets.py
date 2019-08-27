@@ -3,71 +3,29 @@
 ## Do not edit manually
 ####################################################################
 
-import ipywidgets as widgets
-from traitlets import Unicode, Dict
-import json
-import simplejson
+from reactopya_jup import ReactopyaWidget
 
 {% for widget in widgets -%}
 from .widgets import {{ widget.componentName }} as {{ widget.componentName }}Orig
 {% endfor %}
 
-def _json_parse(x):
-    try:
-        return json.loads(x)
-    except:
-        return None
-
-def _json_stringify(x):
-    try:
-        return simplejson.dumps(x, ignore_nan=True)
-    except:
-        return ''
-
 {% for widget in widgets %}
-@widgets.register
-class {{ widget.componentName }}(widgets.DOMWidget):
+class {{ widget.componentName }}:
     """Jupyter widget for {{ widget.componentName }}"""
-    _view_name = Unicode('{{ widget.componentName }}View').tag(sync=True)
-    _model_name = Unicode('{{ widget.componentName }}Model').tag(sync=True)
-    _view_module = Unicode('{{ project_name }}_jup').tag(sync=True)
-    _model_module = Unicode('{{ project_name }}_jup').tag(sync=True)
-    _view_module_version = Unicode('^{{ version }}').tag(sync=True)
-    _model_module_version = Unicode('^{{ version }}').tag(sync=True)
-
-    # props
-    _props = Dict({}).tag(sync=True)
-
-    # python state
-    {% for name in widget.pythonStateKeys -%}
-    {{ name }}= Unicode('').tag(sync=True)
-    {% endfor %}
-
-    # javascript state
-    {% for name in widget.javaScriptStateKeys -%}
-    {{ name }}= Unicode('').tag(sync=True)
-    {% endfor %}
 
     def __init__(self, **kwargs):
         super().__init__()
+        self._props = kwargs
         self._X = {{ widget.componentName }}Orig()
-        self._X.on_python_state_changed(self._handle_python_state_changed)
-        self.observe(self._on_change)
-        self.set_trait('_props', dict(**kwargs))
-        self._X.init_jupyter()
+        self._reactopya_widget = ReactopyaWidget(
+            component=self._X,
+            component_name='{{ widget.componentName }}',
+            props=kwargs
+        )
+    
+    def _reactopya_widget(self):
+        return self._reactopya_widget
 
     def show(self):
-        display(self)
-
-    def _handle_python_state_changed(self):
-        for key in [{%- for name in widget.pythonStateKeys -%}'{{ name }}'{%- if not loop.last %}, {% endif %}{% endfor %}]:
-            val = self._X.get_python_state(key, None)
-            self.set_trait(key, _json_stringify(val))
-
-    def _on_change(self, change):
-        if change.type == 'change':
-            if change.name in [{%- for name in widget.javaScriptStateKeys -%}'{{ name }}'{%- if not loop.last %}, {% endif %}{% endfor %}]:
-                state0 = dict()
-                state0[change.name] = _json_parse(change.new)
-                self._X._handle_javascript_state_changed(state0)
+        self._reactopya_widget.show()
 {% endfor %}

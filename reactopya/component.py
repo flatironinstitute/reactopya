@@ -32,7 +32,7 @@ class Component:
                 msg = {"name": "setPythonState", "state": changed_state}
                 self._send_message(msg)
             for handler in self._python_state_changed_handlers:
-                handler()
+                handler(changed_state)
     
     def run_process_mode(self):
         self._running_process = True

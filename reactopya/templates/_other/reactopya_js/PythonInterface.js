@@ -14,14 +14,11 @@ export default class PythonInterface {
         this._pendingJavaScriptState = {};
     }
     start() {
-        console.info(`Starting python interface for ${this._reactComponent.constructor.name}`)
-        if (this._reactComponent.props.jupyterModel) {
-            let init_state0 = {};
-            for (let key of this._syncPythonStateToStateKeys) {
-                this._reactComponent.props.jupyterModel.on(`change:${key}`, () => {this._handleJupyterPythonStateToState(key);}, this);
-                init_state0[key] = _json_parse(this._reactComponent.props.jupyterModel.get(key, null));
-            }
-            this._reactComponent.setState(init_state0);
+        console.info(`Starting python interface for ${this._reactComponent.constructor.name}`);
+        if (this._reactComponent.props.javaScriptPythonStateModel) {
+            this._reactComponent.props.javaScriptPythonStateModel.onPythonStateChanged((state) => {
+                this._reactComponent.setState(state);
+            });
         }
         else {
             if (this._pythonProcess) return;
@@ -46,7 +43,7 @@ export default class PythonInterface {
         this._copyStateToJavaScriptState();
     }
     setJavaScriptState(state) {
-        if ((!this._reactComponent.props.jupyterModel) && (!this._pythonProcess)) {
+        if ((!this._reactComponent.props.javaScriptPythonStateModel) && (!this._pythonProcess)) {
             for (let key in state) {
                 this._pendingJavaScriptState[key] = state[key];
             }
@@ -60,19 +57,17 @@ export default class PythonInterface {
             }
         }
         if (Object.keys(newJavaScriptState).length > 0) {
-            if (this._reactComponent.props.jupyterModel) {
-                if (this._reactComponent.props.jupyterModel) {
-                    for (let key in newJavaScriptState) {
-                        this._reactComponent.props.jupyterModel.set(key, _json_stringify(newJavaScriptState[key]));
-                    }
-                    this._reactComponent.props.jupyterModel.save_changes();
-                }
+            if (this._reactComponent.props.javaScriptPythonStateModel) {
+                this._reactComponent.props.javaScriptPythonStateModel.setJavaScriptState(newJavaScriptState);
             }
-            else {
+            else if (this._pythonProcess) {
                 this._pythonProcess.sendMessage({
                     name: 'setJavaScriptState',
                     state: newJavaScriptState
                 });
+            }
+            else {
+                console.error('Problem in setJavaScriptState: unable to find one of: props.javaScriptPythonStateModel, _pythonProcess');
             }
         }
     }
@@ -90,15 +85,8 @@ export default class PythonInterface {
         else return undefined;
     }
 
-    _handleJupyterPythonStateToState = (key) => {
-        let state0 = {};
-        let val0 = _json_parse(this._reactComponent.props.jupyterModel.get(key, null));
-        state0[key] = val0;
-        this._reactComponent.setState(state0);
-    }
-
     _cleanup() {
-        if (!this._reactComponent.props.jupyterModel) {
+        if (!this._reactComponent.props.javaScriptPythonStateModel) {
             if (!this._pythonProcess) return;
             this._pythonProcess.stop();
             this._pythonProcess = null;

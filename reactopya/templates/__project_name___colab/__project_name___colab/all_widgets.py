@@ -35,20 +35,21 @@ class {{ widget.componentName }}:
         self._model_id = uuid.uuid4().hex.upper()
         self._X = {{ widget.componentName }}Orig()
         self._X.on_python_state_changed(self._handle_python_state_changed)
-        self._model = ReactopyaColabWidgetModelPy(self._model_id)
         self._props = dict(**kwargs)
 
-    def _handle_python_state_changed(self):
-        for key in [{%- for name in widget.pythonStateKeys -%}'{{ name }}'{%- if not loop.last %}, {% endif %}{% endfor %}]:
-            val = self._X.get_python_state(key, None)
-            self._model.set(key, _json_stringify(val), sync=True)
+    def _handle_python_state_changed(self, state):
+        js_code = '''
+        let json = atob('[python_state_json_b64]');
+        let state = JSON.parse(json);
+        window.reactopya_colab_widget_models['[model_id]'].setPythonState(state);
+        '''
+        python_state_json_b64 = base64.b64encode(simplejson.dumps(state, ignore_nan=True).encode('utf-8')).decode()
+        js_code = js_code.replace('[model_id]', self._model_id)
+        js_code = js_code.replace('[python_state_json_b64]', python_state_json_b64)
+        display(IPython.display.Javascript(js_code))
 
-    def _handle_callback(self, command, *, changes=None):
-        if command == 'save_changes':
-            state = dict()
-            for key, val in changes.items():
-                self._model.set(key, val)
-                state[key] = simplejson.loads(val)
+    def _handle_callback(self, command, *, state=None):
+        if command == 'handleJavaScriptStateChanged':
             self._X._handle_javascript_state_changed(state)
         elif command == 'load_bundle_and_show':
             dirname = os.path.dirname(os.path.realpath(__file__))
@@ -62,17 +63,17 @@ class {{ widget.componentName }}:
             {
                 window.reactopya_bundle_status = 'loaded';
                 let props0 = [props];
-                function onSaveChanges(changes) {
-                    google.colab.kernel.invokeFunction('reactopya.[model_id]', ['save_changes'], {changes: changes});
+                function onJavaScriptStateChanged(state) {
+                    google.colab.kernel.invokeFunction('reactopya.[model_id]', ['handleJavaScriptStateChanged'], {state: state});
                 }
-                let model = window.reactopya_colab.widgets.{{ widget.componentName }}.render(props0, onSaveChanges);
+                let model = window.reactopya_colab.widgets.{{ widget.componentName }}.render(props0, onJavaScriptStateChanged);
                 if (!window.reactopya_colab_widget_models)
                     window.reactopya_colab_widget_models = {};
                 window.reactopya_colab_widget_models['[model_id]'] = model;
             }
             '''
             js_code = js_code.replace('[model_id]', self._model_id)
-            js_code = js_code.replace('[props]', simplejson.dumps(self._props))
+            js_code = js_code.replace('[props]', simplejson.dumps(self._props, ignore_nan=True))
             display(IPython.display.Javascript(js_code))
 
 
@@ -103,34 +104,3 @@ class {{ widget.componentName }}:
         display(IPython.display.Javascript(js_code))
 
 {% endfor %}
-
-class ReactopyaColabWidgetModelPy:
-    def __init__(self, model_id):
-        self._model_id = model_id
-        self._data = dict()  # values are all strings
-        self._change_handlers = dict()
-    def set(self, key, val, *, sync=False):
-        if key in self._data:
-            if self._data[key] == val:
-                return
-        self._data[key] = val
-        if key in self._change_handlers:
-            for handler in self._change_handlers[key]:
-                handler()
-        if sync:
-            js_code = '''
-            window.reactopya_colab_widget_models['[model_id]'].set('[key]', atob('[value_b64]'));
-            '''
-            value_b64 = base64.b64encode(val.encode('utf-8')).decode()
-            js_code = js_code.replace('[model_id]', self._model_id)
-            js_code = js_code.replace('[key]', key)
-            js_code = js_code.replace('[value_b64]', value_b64)
-            display(IPython.display.Javascript(js_code))
-    def get(self, key, defaultval):
-        if key not in self._data:
-            return defaultval
-        return self._data[key]
-    def onChange(self, key, handler):
-        if key not in self._change_handlers:
-            self._change_handlers[key] = []
-        self._change_handlers[key].append(handler)

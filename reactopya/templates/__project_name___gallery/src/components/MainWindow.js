@@ -100,7 +100,7 @@ export default class MainWindow extends Component {
         const { config } = this.props;
         const { expandedWidget } = this.state;
         const style0 = { overflowX: 'hidden', margin: 10, padding: 20, background: 'lightblue' };
-        const style1 = { padding: 20, margin: 10, minHeight: 800 };
+        const style1 = { padding: 20, margin: 10, minHeight: 800, maxHeight: 800, overflowY: 'auto' };
         let widgets = [];
         if (expandedWidget) {
             widgets.push(expandedWidget);
@@ -116,11 +116,11 @@ export default class MainWindow extends Component {
                 }
             }
             for (let a of config.gallery_widgets) {
-                let component = allWidgets[a.name];
                 widgets.push({
-                    component: component,
-                    title: a.title || component.title || a.name,
-                    props: a.props || (component.reactopyaConfig || {}).galleryProps || {}
+                    component_name: a.name,
+                    title: a.title || allWidgets[a.name].title || a.name,
+                    children: a.children || [],
+                    props: a.props || (allWidgets[a.name].reactopyaConfig || {}).galleryProps || {}
                 });
             }
         }
@@ -141,9 +141,9 @@ export default class MainWindow extends Component {
             <div style={style0}>
                 <Grid container style={style0}>
                     {
-                        widgets.map((widget) => {
-                            let Comp = widget.component;
-                            return <Grid key={widget.title} item {...item_sizes}>
+                        widgets.map((widget, ii) => {
+                            let element = _create_element(widget.component_name, widget.children, widget.props);
+                            return <Grid key={widget.title} item {...item_sizes} key={ii}>
                                 <Paper style={style1}>
                                     <Grid container alignItems={'flex-start'} justify={'flex-end'} direction={'row'}>
                                         <IconButton
@@ -158,7 +158,7 @@ export default class MainWindow extends Component {
                                     <h2>{widget.title}</h2>
                                     <hr />
                                     <LazyLoader>
-                                        <Comp {...(widget.props)} />
+                                        {element}
                                     </LazyLoader>
                                 </Paper>
                             </Grid>;
@@ -168,4 +168,17 @@ export default class MainWindow extends Component {
             </div>
         );
     }
+}
+
+function _create_element(component_name, children, props, key) {
+    let Comp = allWidgets[component_name];
+    return (
+        <Comp {...(props)} key={key || undefined}>
+            {
+                children.map((child, ii) => (
+                    _create_element(child.name, child.children || [], child.props || {}, ii)
+                ))
+            }
+        </Comp>
+    );
 }

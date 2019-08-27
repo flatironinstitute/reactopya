@@ -1,5 +1,6 @@
 dist
 generated
+static
 
 .mypy_cache
 .vscode
