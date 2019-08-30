@@ -394,6 +394,10 @@ def _load_config():
     with open('reactopya.config.json', 'r') as f:
         config = json.load(f)
 
+    if os.path.exists('gallery.json'):
+        with open('gallery.json', 'r') as f:
+            config['gallery_widgets'] = json.load(f).get('widgets', [])
+
     if 'package_json' not in config:
         config['package_json'] = {}
     if 'dependencies' not in config['package_json']:
