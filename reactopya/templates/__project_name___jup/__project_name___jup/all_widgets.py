@@ -6,26 +6,64 @@
 from reactopya_jup import ReactopyaWidget
 
 {% for widget in widgets -%}
-from .widgets import {{ widget.componentName }} as {{ widget.componentName }}Orig
+from .widgets import {{ widget.type }} as {{ widget.type }}Orig
 {% endfor %}
 
 {% for widget in widgets %}
-class {{ widget.componentName }}:
-    """Jupyter widget for {{ widget.componentName }}"""
+class {{ widget.type }}:
+    """Jupyter widget for {{ widget.type }}"""
 
-    def __init__(self, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__()
-        self._props = kwargs
-        self._X = {{ widget.componentName }}Orig()
-        self._reactopya_widget = ReactopyaWidget(
-            component=self._X,
-            component_name='{{ widget.componentName }}',
-            props=kwargs
-        )
+        self._props = dict(**kwargs)
+        self._children = list(args)
+        self._component = {{ widget.type }}Orig()
+        self._component.on_python_state_changed(lambda state: self._handle_python_state_changed(state, []))
+        self._connect_children(self._children, [])
+        self._reactopya_widget = None
+        self._component.init_jupyter()
     
+    def _connect_children(self, children, child_indices):
+        for i, ch in enumerate(children):
+            self._connect_child(ch, child_indices + [i])
+            self._connect_children(ch._children, child_indices + [i])
+    
+    def _connect_child(self, child, child_indices):
+        child._component.on_python_state_changed(lambda state: self._handle_python_state_changed(state, child_indices))
+    
+    def _handle_python_state_changed(self, state, child_indices):
+        if self._reactopya_widget:
+            self._reactopya_widget.set_python_state(state, child_indices)
+
+    def _handle_javascript_state_changed(self, state, child_indices):
+        ptr = self
+        for ind in child_indices:
+            ptr = ptr._children[ind]
+        ptr._component._handle_javascript_state_changed(state)
+
+    def _serialize(self):
+        return dict(
+            type='{{ widget.type }}',
+            children=[
+                ch._serialize()
+                for ch in self._children
+            ],
+            props=self._props
+        )
+
     def _reactopya_widget(self):
         return self._reactopya_widget
 
     def show(self):
+        self._reactopya_widget = ReactopyaWidget(
+            type='{{ widget.type }}',
+            children=[
+                ch._serialize()
+                for ch in self._children
+            ],
+            props=self._props
+        )
+        self._reactopya_widget.on_javascript_state_changed(self._handle_javascript_state_changed)
+
         self._reactopya_widget.show()
 {% endfor %}

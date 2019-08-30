@@ -1,1 +1,1 @@
-from .{{ NewWidget.ComponentName }} import {{ NewWidget.ComponentName }}
+from .{{ NewWidget.type }} import {{ NewWidget.type }}

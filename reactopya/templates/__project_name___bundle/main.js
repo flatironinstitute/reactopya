@@ -2,42 +2,37 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 
 {% for widget in widgets -%}
-import { {{ widget.componentName }} } from './widgets/index.js';
+import { {{ widget.type }} } from './widgets/index.js';
 {% endfor %}
 
 window.reactopya = window.reactopya || {};
 window.reactopya.widgets = window.reactopya.widgets || {};
 
-let componentsByName = {};
+let widgetsByType = {};
 {% for widget in widgets -%}
-componentsByName['{{ widget.componentName }}'] = {{ widget.componentName }};
+widgetsByType['{{ widget.type }}'] = {{ widget.type }};
 {% endfor %}
 
-function _create_element(component_name, props) {
-    console.log('--- create element', component_name, props);
-    let children = props.children || [];
-    let new_props = {};
-    for (let key in props) {
-        if (key !== 'children') {
-            new_props[key] = props[key];
-        }
-    }
-    let Component = componentsByName[component_name];
+function _create_element(type, children, props, key) {
+    children = children || [];
+    props = props || {};
+    key = key || undefined;
+    let Comp = widgetsByType[type];
     return (
-        <Component {...new_props}>
+        <Comp {...props}>
             {
-                children.map((child) => (
-                    _create_element(child.component_name, child.props)
-                ))
+                children.map((child) => {
+                    return _create_element(child.type, child.children, child.props, child.key)
+                })
             }
-        </Component>
+        </Comp>
     );
 }
 
 {% for widget in widgets %}
-window.reactopya.widgets['{{ widget.componentName }}'] = {
-    render: function(div, props) {
-        let X = _create_element('{{ widget.componentName }}', props);
+window.reactopya.widgets['{{ widget.type }}'] = {
+    render: function(div, children, props, key) {
+        let X = _create_element('{{ widget.type }}', children, props, key);
         ReactDOM.render(X, div);
     }
 }

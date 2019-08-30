@@ -13,7 +13,6 @@ import uuid
 
 
 def main():
-
     commands = [
         {
             'name': 'init-project',
@@ -43,12 +42,12 @@ def main():
         {
             'name': 'install-electron',
             'func': _install_electron,
-            'description': 'Install electron (must be called prior to running start-gallery-dev)',
+            'description': 'Installation step prior to running start-gallery-dev',
         },
         {
             'name': 'start-gallery-dev',
             'func': _start_gallery_dev,
-            'description': 'Start the electron gallery application in development mode (use install-electron first)'
+            'description': 'Start the electron gallery application in development mode (use install-electron first). This also calls "reactopya watch" in the background.'
         },
         {
             'name': 'install-jupyter-extension',
@@ -148,7 +147,7 @@ def _init_project(args):
 
 def _list_widgets(config, args):
     for w in config['widgets']:
-        print(w['componentName'])
+        print(w['type'])
 
 
 def _install_electron(config, args):
@@ -239,18 +238,18 @@ def _start_server(config, args):
 
 
 def _new_widget(config, args):
-    component_name = input('Name of new widget component (e.g., SomeView): ')
-    if not component_name:
+    type = input('Name of new widget component (e.g., SomeView): ')
+    if not type:
         print('Not creating new widget.')
         return
-    dirname = os.path.join('widgets', component_name)
+    dirname = os.path.join('widgets', type)
     if os.path.exists(dirname):
         print('Cannot create new widget. Directory already exists: {}'.format(
-            component_name))
+            type))
         return
     description = input('Brief description of the new widget: ')
     config['NewWidget'] = dict(
-        ComponentName=component_name,
+        type=type,
         description=description
     )
     try:
@@ -260,11 +259,11 @@ def _new_widget(config, args):
             print('{} files processed, {} changed'.format(
                 num_processed, num_changed))
 
-        txt1 = 'from .{{ NewWidget.ComponentName }} import {{ NewWidget.ComponentName }}'
+        txt1 = 'from .{{ NewWidget.type }} import {{ NewWidget.type }}'
         txt1 = Template(txt1).render(config)
         _append_text_file(os.path.join('widgets', '__init__.py'), txt1)
 
-        txt2 = "export { default as {{ NewWidget.ComponentName }} } from './{{ NewWidget.ComponentName }}/{{ NewWidget.ComponentName }}';"
+        txt2 = "export { default as {{ NewWidget.type }} } from './{{ NewWidget.type }}/{{ NewWidget.type }}';"
         txt2 = Template(txt2).render(config)
         _append_text_file(os.path.join('widgets', 'index.js'), txt2)
     except:
@@ -577,8 +576,8 @@ def _write_binary_file_if_changed(fname, data):
 def _map_file_name(fname, config):
     fname = fname.replace('__project_name__', config['project_name'])
     if 'NewWidget' in config:
-        fname = fname.replace('__ComponentName__',
-                              config['NewWidget']['ComponentName'])
+        fname = fname.replace('__type__',
+                              config['NewWidget']['type'])
     return fname
 
 

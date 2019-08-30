@@ -1,7 +1,7 @@
 from reactopya import Component
 
 
-class {{ NewWidget.ComponentName }}(Component):
+class {{ NewWidget.type }}(Component):
     def __init__(self):
         super().__init__()
 

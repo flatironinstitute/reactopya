@@ -11,25 +11,63 @@ class ReactopyaWidgetModel extends widgets.DOMWidgetModel {
     initialize(attributes, options) {
         super.initialize(attributes, options);
         let that = this;
+        
         this.listenTo(this, 'msg:custom', _.bind(this.handleMessage, this));
         this.javaScriptPythonStateModel = new JavaScriptPythonStateModel();
         this.javaScriptPythonStateModel.onJavaScriptStateChanged(function(state) {
             that.send({
                 name: 'setJavaScriptState',
+                child_indices: [],
                 state: state
             });
         });
+        this.on('change:_children', function() {
+            that.initialize_children();
+        });
+    }
+    initialize_children() {
+        this.children = JSON.parse(JSON.stringify((this.get('_children') || {}).children || []));
+        this.add_jsp_models_to_children(this.children, []);
+    }
+    add_jsp_models_to_children(children, child_indices) {
+        let that = this;
+        for (let i in children) {
+            (function(ich) {
+                let ch = children[ich];
+                let child_indices2 = JSON.parse(JSON.stringify(child_indices));
+                child_indices2.push(+ich);
+                ch.props = ch.props || {};
+                ch.props.javaScriptPythonStateModel = new JavaScriptPythonStateModel();
+                ch.props.javaScriptPythonStateModel.onJavaScriptStateChanged(function(state) {
+                    that.send({
+                        name: 'setJavaScriptState',
+                        child_indices: child_indices2,
+                        state: state
+                    });
+                })
+                that.add_jsp_models_to_children(ch.children || [], child_indices2);
+            })(i);
+        }
     }
     handleMessage(content) {
         const name = content.name;
         if (name == 'setPythonState') {
             let state = content.state;
-            this.javaScriptPythonStateModel.setPythonState(state);
+            let child_indices = content.child_indices || [];
+            if (child_indices.length === 0) {
+                this.javaScriptPythonStateModel.setPythonState(state);    
+            }
+            else {
+                let ptr = this;
+                for (let ind of child_indices) {
+                    ptr = ptr.children[ind];
+                }
+                ptr.props.javaScriptPythonStateModel.setPythonState(state);
+            }
         }
         else {
             console.error(`Unregognized message in Model: ${name}`);
         }
-        
     }
     defaults() {
         return _.extend(widgets.DOMWidgetModel.prototype.defaults(), {
@@ -40,8 +78,9 @@ class ReactopyaWidgetModel extends widgets.DOMWidgetModel {
             _model_module_version : version,
             _view_module_version : version,
 
-            _component_name: 'unknown',
-            _props: {}
+            _type: 'unknown',
+            _props: {},
+            _children: {}
         });
     }
 }
@@ -55,10 +94,13 @@ class ReactopyaWidgetView extends widgets.DOMWidgetView {
         this.div=document.createElement('div');
         this.el.appendChild(this.div);
 
-        const componentName = this.model.get('_component_name');
+        const type = this.model.get('_type');
         let props = this.model.get('_props');
+        let key = this.model.get('_key')
+        
         props.javaScriptPythonStateModel = this.model.javaScriptPythonStateModel;
-        window.reactopya.widgets[componentName].render(this.div, props);
+        
+        window.reactopya.widgets[type].render(this.div, this.model.children, props, key || undefined);
     }
 }
 

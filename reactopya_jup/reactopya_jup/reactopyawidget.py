@@ -1,5 +1,5 @@
 import ipywidgets as widgets
-from traitlets import Unicode, Dict
+from traitlets import Unicode, Dict, List
 import json
 import simplejson
 
@@ -14,37 +14,47 @@ class ReactopyaWidget(widgets.DOMWidget):
     _model_module_version = Unicode('^0.3.8').tag(sync=True)
 
     # props
-    _component_name = Unicode('').tag(sync=True)
+    _type = Unicode('').tag(sync=True)
+    _children = Dict([]).tag(sync=True)
     _props = Dict({}).tag(sync=True)
+    _key = Unicode('').tag(sync=True)
 
-    def __init__(self, *, component, component_name, props):
+    def __init__(self, *, type, children, props, key=''):
         super().__init__()
-        self._component_name = component_name
-        self._props = props
-        self._component = component
-        self._component.on_python_state_changed(self._handle_python_state_changed)
+        self._m_type = type
+        self._m_children = children
+        self._m_props = props
+        self._m_key = key
+        self._javascript_state_changed_handlers = []
         self.observe(self._on_change)
-        self.set_trait('_component_name', component_name)
+        self.set_trait('_type', type)
         self.set_trait('_props', props)
-        self._component.init_jupyter()
+        self.set_trait('_children', dict(children=children))
+        self.set_trait('_key', key)
         self.on_msg(self._handle_message)
 
     def show(self):
         display(self)
+    
+    def set_python_state(self, state, child_indices=[]):
+        self.send(dict(
+            name='setPythonState',
+            child_indices=child_indices,
+            state=state
+        ))
+    
+    def on_javascript_state_changed(self, handler):
+        self._javascript_state_changed_handlers.append(handler)
 
     def _handle_message(self, _, content, buffers):
         name = content.get('name', '')
         if name == 'setJavaScriptState':
             state = content['state']
-            self._component._handle_javascript_state_changed(state)
+            child_indices = content.get('child_indices', [])
+            for handler in self._javascript_state_changed_handlers:
+                handler(state, child_indices)
         else:
             raise Exception('Unexpected message name: {}'.format(name))
-
-    def _handle_python_state_changed(self, state):
-        self.send(dict(
-            name='setPythonState',
-            state=state
-        ))
 
     def _on_change(self, change):
         # maybe sometime we'll handle the case of changing props

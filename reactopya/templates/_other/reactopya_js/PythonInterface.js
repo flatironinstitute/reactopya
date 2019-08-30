@@ -5,7 +5,7 @@ export default class PythonInterface {
     constructor(reactComponent, config) {
         this._reactComponent = reactComponent;
         this._pythonModuleName = config.pythonModuleName || '{{ project_name }}_widgets';
-        this._componentName = config.componentName;
+        this._type = config.type;
         this._syncPythonStateToStateKeys = config.pythonStateKeys;
         this._syncStateToJavaScriptStateKeys = config.javaScriptStateKeys;
         this._pythonProcess = null;
@@ -22,7 +22,7 @@ export default class PythonInterface {
         }
         else {
             if (this._pythonProcess) return;
-            this._pythonProcess = new PythonProcess(this._pythonModuleName, this._componentName);
+            this._pythonProcess = new PythonProcess(this._pythonModuleName, this._type);
             this._pythonProcess.onReceiveMessage(this._handleReceiveMessageFromProcess);
             this._pythonProcess.start();
             window.addEventListener('beforeunload', () => {

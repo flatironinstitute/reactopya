@@ -9,15 +9,11 @@ window.reactopya_colab = window.reactopya_colab || {};
 window.reactopya_colab.widgets = window.reactopya_colab.widgets || {};
 
 {% for widget in widgets %}
-window.reactopya_colab.widgets['{{ widget.componentName }}'] = {
-    render: function(props, onJavaScriptStateChanged) {
-        let model = new JavaScriptPythonStateModel();
-        model.onJavaScriptStateChanged(onJavaScriptStateChanged);
+window.reactopya_colab.widgets['{{ widget.type }}'] = {
+    render: function(children, props, key) {
         let div = document.createElement('div');
         document.querySelector("#output-area").appendChild(div);
-        props.javaScriptPythonStateModel = model;
-        window.reactopya.widgets.{{ widget.componentName }}.render(div, props);
-        return model;
+        window.reactopya.widgets.{{ widget.type }}.render(div, children, props, key);
     }
 }
 {% endfor %}
@@ -60,3 +56,5 @@ class JavaScriptPythonStateModel {
         }
     }
 }
+
+window.JavaScriptPythonStateModel = JavaScriptPythonStateModel;

@@ -117,10 +117,10 @@ export default class MainWindow extends Component {
             }
             for (let a of config.gallery_widgets) {
                 widgets.push({
-                    component_name: a.name,
-                    title: a.title || allWidgets[a.name].title || a.name,
+                    type: a.type,
+                    title: a.title || allWidgets[a.type].title || a.type,
                     children: a.children || [],
-                    props: a.props || (allWidgets[a.name].reactopyaConfig || {}).galleryProps || {}
+                    props: a.props || (allWidgets[a.type].reactopyaConfig || {}).galleryProps || {}
                 });
             }
         }
@@ -142,7 +142,7 @@ export default class MainWindow extends Component {
                 <Grid container style={style0}>
                     {
                         widgets.map((widget, ii) => {
-                            let element = _create_element(widget.component_name, widget.children, widget.props);
+                            let element = _create_element(widget.type, widget.children, widget.props);
                             return <Grid key={widget.title} item {...item_sizes} key={ii}>
                                 <Paper style={style1}>
                                     <Grid container alignItems={'flex-start'} justify={'flex-end'} direction={'row'}>
@@ -170,13 +170,13 @@ export default class MainWindow extends Component {
     }
 }
 
-function _create_element(component_name, children, props, key) {
-    let Comp = allWidgets[component_name];
+function _create_element(type, children, props, key) {
+    let Comp = allWidgets[type];
     return (
         <Comp {...(props)} key={key || undefined}>
             {
                 children.map((child, ii) => (
-                    _create_element(child.name, child.children || [], child.props || {}, ii)
+                    _create_element(child.type, child.children || [], child.props || {}, ii)
                 ))
             }
         </Comp>

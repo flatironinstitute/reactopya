@@ -1,5 +1,5 @@
 {
-    "componentName": "{{ NewWidget.ComponentName }}",
+    "type": "{{ NewWidget.type }}",
     "description": "{{ NewWidget.description }}",
     "propsKeys": [],
     "javaScriptStateKeys": [],

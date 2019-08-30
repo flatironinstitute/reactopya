@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
 import { PythonInterface } from 'reactopya';
-const config = require('./{{ NewWidget.ComponentName }}.json');
+const config = require('./{{ NewWidget.type }}.json');
 
-export default class {{ NewWidget.ComponentName }} extends Component {
+export default class {{ NewWidget.type }} extends Component {
     static title = '{{ NewWidget.description }}'
     static reactopyaConfig = config
     constructor(props) {
@@ -25,9 +25,9 @@ export default class {{ NewWidget.ComponentName }} extends Component {
     render() {
         return (
             <React.Fragment>
-                <div>{{ NewWidget.ComponentName }}</div>
+                <div>{{ NewWidget.type }}</div>
                 <RespectStatus {...this.state}>
-                    <div>Render {{ NewWidget.ComponentName }} here</div>
+                    <div>Render {{ NewWidget.type }} here</div>
                 </RespectStatus>
             </React.Fragment>
         )
