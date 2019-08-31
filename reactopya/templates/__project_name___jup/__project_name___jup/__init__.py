@@ -4,6 +4,7 @@
 ####################################################################
 
 from .all_widgets import *
+from .widgets.jupyter import *
 
 from ._version import __version__
 
