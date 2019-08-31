@@ -3,6 +3,7 @@ const WebSocket = require('ws');
 class ReactopyaClient {
     constructor() {
         this._validation_confirmed = false;
+        this._connected = false;
         this._last_python_process_id = 1000;
         this._python_processes = {};
     }
@@ -10,6 +11,7 @@ class ReactopyaClient {
         if ((typeof(window) !== 'undefined') && (window.WebSocket)) {
             this._ws = new window.WebSocket(url);
             this._ws.addEventListener('open', () => {
+                this._connected = true;
                 this._sendMessage({message_type: 'validation', validation_string: 'reactopya-1'});
             });
             this._ws.addEventListener('message', (evt) => {this._handleMessage(evt.data);});
@@ -17,6 +19,7 @@ class ReactopyaClient {
         else {
             this._ws = new WebSocket(url);
             this._ws.on('open', () => {
+                this._connected = true;
                 this._sendMessage({message_type: 'validation', validation_string: 'reactopya-1'});
             });
             this._ws.on('message', (msg) => {this._handleMessage(msg);});
@@ -47,6 +50,13 @@ class ReactopyaClient {
         }
     }
     _sendMessage(message) {
+        if (!this._connected) {
+            let that = this;
+            setTimeout(function() {
+                that._sendMessage(message);
+            }, 1);
+            return;
+        }
         this._ws.send(JSON.stringify(message));
     }
     startPythonProcess(componentModule, componentName, onReceiveMessage) {
