@@ -17,7 +17,7 @@
         "install-extension": "jupyter nbextension install --py --symlink --sys-prefix reactopya_jup && jupyter nbextension enable reactopya_jup --py --sys-prefix",
         "install-labextension": "jupyter labextension install .",
         "pypi-publish": "rm dist/*.tar.gz || true && python setup.py sdist && twine upload dist/*.tar.gz",
-        "npm-publish": "yarn copy-bundle && echo \"Now you should login to npm and then run: npm publish\""
+        "npm-publish": "echo \"Login to npm and then run: npm publish\""
     },
     "dependencies": {
         "@jupyter-widgets/base": "^2.0"
