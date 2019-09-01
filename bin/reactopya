@@ -50,14 +50,9 @@ def main():
             'description': 'Start the electron gallery application in development mode (use install-electron first). This also calls "reactopya watch" in the background.'
         },
         {
-            'name': 'install-jupyter-extension',
-            'func': _install_jupyter_extension,
-            'description': 'Install the jupyter notebook extension'
-        },
-        {
-            'name': 'install-jupyter-labextension',
-            'func': _install_jupyter_labextension,
-            'description': 'Install the jupyter lab extension'
+            'name': 'install-jupyter',
+            'func': _install_jupyter,
+            'description': 'Install the package for jupyter notebook'
         },
         {
             'name': 'build-colab',
@@ -276,7 +271,7 @@ def _append_text_file(fname, txt):
     _write_text_file_if_changed(fname, txt2)
 
 
-def _install_jupyter_extension(config, args):
+def _install_jupyter(config, args):
     _generate(config=config, args=args)
     cmd = '''
         #!/bin/bash
@@ -288,13 +283,8 @@ def _install_jupyter_extension(config, args):
         yarn build
         cd ../{project_name}_jup
         pip install -e .
-        yarn copy-bundle
-        echo "======================================= JUPYTER INSTALL ======================================="
-        yarn install
-        echo "======================================= JUPYTER BUILD ======================================="
-        yarn build
-        echo "======================================= JUPYTER EXTENSION INSTALL ======================================="
-        yarn install-extension
+        mkdir -p {project_name}_jup/dist
+        cp ../{project_name}_bundle/dist/bundle.js {project_name}_jup/dist/bundle.js
     '''.format(project_name=config['project_name'])
     shell_cmd = ShellScript(cmd)
     shell_cmd.start()
@@ -304,38 +294,7 @@ def _install_jupyter_extension(config, args):
         raise Exception(
             'Shell script exited with non-zero return code: {}'.format(retcode))
 
-    print('You may now import {}_jup within jupyter notebook.'.format(
-        config['project_name']))
-
-def _install_jupyter_labextension(config, args):
-    _generate(config=config, args=args)
-    cmd = '''
-        #!/bin/bash
-        set -ex
-        cd generated/{project_name}_bundle
-        echo "======================================= BUNDLE INSTALL ======================================="
-        yarn install
-        echo "======================================= BUNDLE BUILD ======================================="
-        yarn build
-        cd ../{project_name}_jup
-        pip install -e .
-        yarn copy-bundle
-        echo "======================================= JUPYTER INSTALL ======================================="
-        yarn install
-        echo "======================================= JUPYTER BUILD ======================================="
-        yarn build
-        echo "======================================= JUPYTER LABEXTENSION INSTALL ======================================="
-        yarn install-labextension
-    '''.format(project_name=config['project_name'])
-    shell_cmd = ShellScript(cmd)
-    shell_cmd.start()
-    retcode = shell_cmd.wait()
-
-    if retcode != 0:
-        raise Exception(
-            'Shell script exited with non-zero return code: {}'.format(retcode))
-
-    print('You may now import {}_jup within jupyter lab. Important: be sure to also install the ipywidgets jupyter lab extension (see the README).'.format(
+    print('You may now import {}_jup within jupyter notebook or jupyter lab.'.format(
         config['project_name']))
 
 def _build_colab(config, args):

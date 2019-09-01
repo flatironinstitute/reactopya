@@ -67,8 +67,8 @@ class {{widget.type}}:
         elif command == 'load_bundle_and_show':
             dirname = os.path.dirname(os.path.realpath(__file__))
             fname = os.path.join(dirname, 'dist', 'bundle.js')
-            with open(fname, 'r') as f:
-                js = f.read()
+            with open(fname, 'rb') as f:
+                js = f.read().decode('utf-8')
             display(IPython.display.Javascript(js))
             self._handle_callback('show')
         elif command == 'show':
