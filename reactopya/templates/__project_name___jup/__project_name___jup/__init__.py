@@ -15,3 +15,15 @@ def _jupyter_nbextension_paths():
         'dest': '{{ project_name }}_jup',
         'require': '{{ project_name }}_jup/extension'
     }]
+
+def init_jupyter():
+    from IPython.display import Javascript
+    import os
+    dirname = os.path.dirname(os.path.realpath(__file__))
+
+    fname = os.path.join(dirname, '..', 'dist', 'bundle.js')
+    with open(fname, 'r') as f:
+        js = f.read()
+    # display(Javascript(requirejs + '\n\n' + js))
+    display(Javascript(js))
+    print('Initialized {{ project_name }} for Jupyter notebooks')

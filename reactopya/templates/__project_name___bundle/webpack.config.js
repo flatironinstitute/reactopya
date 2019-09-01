@@ -70,12 +70,14 @@ const resolve = {
 module.exports = [
     {
         entry: ['./main.js'],
+        target: 'web',
         output: {
             filename: 'bundle.js',
             path: path.resolve(__dirname, 'dist'),
-            libraryTarget: 'amd'
+            library: '{{ project_name }}',
+            libraryTarget: 'window'
         },
-        devtool: 'source-map',
+        // devtool: 'source-map',
         module: {
             rules: rules
         },

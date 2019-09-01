@@ -1,7 +1,6 @@
 import ipywidgets as widgets
 from traitlets import Unicode, Dict, List
-import json
-import simplejson
+from ._version import __version__ as version
 
 @widgets.register
 class ReactopyaWidget(widgets.DOMWidget):
@@ -10,14 +9,15 @@ class ReactopyaWidget(widgets.DOMWidget):
     _model_name = Unicode('ReactopyaWidgetModel').tag(sync=True)
     _view_module = Unicode('reactopya_jup').tag(sync=True)
     _model_module = Unicode('reactopya_jup').tag(sync=True)
-    _view_module_version = Unicode('^0.3.8').tag(sync=True)
-    _model_module_version = Unicode('^0.3.8').tag(sync=True)
+    _view_module_version = Unicode('^{}'.format(version)).tag(sync=True)
+    _model_module_version = Unicode('^{}'.format(version)).tag(sync=True)
 
     # props
     _type = Unicode('').tag(sync=True)
     _children = Dict([]).tag(sync=True)
     _props = Dict({}).tag(sync=True)
     _key = Unicode('').tag(sync=True)
+    _reactopya_jup_version = Unicode('').tag(sync=True)
 
     def __init__(self, *, type, children, props, key=''):
         super().__init__()
