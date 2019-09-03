@@ -1,1 +1,3 @@
-include reactopya/VERSION
+include reactopya_jup/VERSION
+include reactopya_jup/static/index.js
+include reactopya_jup/static/extension.js

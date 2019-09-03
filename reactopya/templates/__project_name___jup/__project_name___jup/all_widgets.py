@@ -3,7 +3,8 @@
 ## Do not edit manually
 ####################################################################
 
-from reactopya_jup import ReactopyaWidget
+from reactopya_jup import ReactopyaWidget, ReactopyaColabWidget
+from .init import _get_init_info
 
 {% for widget in widgets -%}
 from .widgets import {{ widget.type }} as {{ widget.type }}Orig
@@ -55,7 +56,12 @@ class {{ widget.type }}:
         return self._reactopya_widget
 
     def show(self):
-        self._reactopya_widget = ReactopyaWidget(
+        init_info = _get_init_info()
+        if init_info['mode'] == 'jupyter':
+            RW = ReactopyaWidget
+        elif init_info['mode'] == 'colab':
+            RW = ReactopyaColabWidget
+        self._reactopya_widget = RW(
             type='{{ widget.type }}',
             children=[
                 ch._serialize()
@@ -63,6 +69,8 @@ class {{ widget.type }}:
             ],
             props=self._props
         )
+        if init_info['mode'] == 'colab':
+            self._reactopya_widget._set_bundle_js(init_info['bundle_js'], store_bundle_in_notebook=init_info['store_bundle_in_notebook'])
         self._reactopya_widget.on_javascript_state_changed(self._handle_javascript_state_changed)
 
         self._reactopya_widget.show()

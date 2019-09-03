@@ -134,10 +134,23 @@ def _init_project(args):
 
     with open('package.json', 'w') as f:
         json.dump(package_json, f, indent=4)
+    
+    gallery_json = {
+        "widgets": [
+
+        ]
+    }
+    with open('gallery.json', 'w') as f:
+        json.dump(gallery_json, f, indent=4)
 
     # template_dir =
     # _generate_directory(os.path.join(reactopya_templates_directory(), '_other', 'widgets', ))
     os.mkdir('widgets')
+
+    with open('widgets/__init__.py', 'w') as f:
+        f.write('')
+    with open('widgets/index.js', 'w') as f:
+        f.write('')
 
 
 def _list_widgets(config, args):

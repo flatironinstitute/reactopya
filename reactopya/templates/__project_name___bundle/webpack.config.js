@@ -10,7 +10,7 @@ var rules = [
     {
         // JavaScript rules.
         test: /\.js$/,
-        exclude: /node_modules/,
+        exclude: [/node_modules/, /.*\.min\.js/],
         use: {
             loader: 'babel-loader',
             options: {

@@ -4,9 +4,12 @@
 ####################################################################
 
 from .all_widgets import *
-from .widgets.jupyter import *
+{% for X in additional_jupyter_imports %}
+{{ X }}
+{% endfor %}
 
 from ._version import __version__
+from .init import init_jupyter, init_colab
 
 def _jupyter_nbextension_paths():
     return [{
@@ -16,14 +19,3 @@ def _jupyter_nbextension_paths():
         'require': '{{ project_name }}_jup/extension'
     }]
 
-def init_jupyter():
-    from IPython.display import Javascript
-    import os
-    dirname = os.path.dirname(os.path.realpath(__file__))
-
-    fname = os.path.join(dirname, 'dist', 'bundle.js')
-    with open(fname, 'rb') as f:
-        js = f.read().decode('utf-8')
-    # display(Javascript(requirejs + '\n\n' + js))
-    display(Javascript(js))
-    print('Initialized {{ project_name }} for Jupyter notebooks')

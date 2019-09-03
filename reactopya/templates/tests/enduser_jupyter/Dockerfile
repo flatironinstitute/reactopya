@@ -24,12 +24,14 @@ RUN pip install jupyterlab
 
 #########################################
 ### Install reactopya_jup
-RUN pip install --upgrade reactopya_jup
 RUN jupyter labextension install @jupyter-widgets/jupyterlab-manager
-RUN jupyter labextension install reactopya_jup
+RUN pip install --upgrade reactopya_jup==0.5.0
+RUN jupyter labextension install reactopya_jup@0.5.0
+RUN jupyter nbextension install --sys-prefix --py reactopya_jup
+RUN jupyter nbextension enable reactopya_jup --py --sys-prefix
 
 #########################################
-### Install {{ project_name }}
-RUN pip install --upgrade {{ project_name }}=={{ version }}
+### Install {{ project_name }}_jup
+RUN pip install --upgrade {{ project_name }}_jup=={{ version }}
 
-CMD jupyter lab --ip 0.0.0.0 --port 8888 --no-browser --allow-root
+CMD echo "See instructions.txt on how to run this container"

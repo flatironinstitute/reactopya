@@ -10,7 +10,7 @@ const rules = [
         // First up, our JavaScript rules.
         test: /\.js$/,
         // // Don't bother spending time transpiling your installed packages
-        exclude: /node_modules/,
+        exclude: [/node_modules/, /.*\.min\.js/],
         // Use babel to transpile our JS.
         use: {
             loader: 'babel-loader',
