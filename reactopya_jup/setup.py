@@ -14,7 +14,8 @@ setuptools.setup(
     include_package_data=True,
     scripts=[],
     install_requires=[
-        'simplejson'
+        'simplejson',
+        'ipywidgets'
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
