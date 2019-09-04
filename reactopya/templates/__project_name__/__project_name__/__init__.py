@@ -9,13 +9,4 @@ from .all_widgets import *
 {% endfor %}
 
 from ._version import __version__
-from .init import init_jupyter, init_colab
-
-def _jupyter_nbextension_paths():
-    return [{
-        'section': 'notebook',
-        'src': 'static',
-        'dest': '{{ project_name }}_jup',
-        'require': '{{ project_name }}_jup/extension'
-    }]
-
+from .init import init_jupyter, init_colab, init_electron

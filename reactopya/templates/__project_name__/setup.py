@@ -1,6 +1,6 @@
 import setuptools
 
-pkg_name = "{{ project_name }}_jup"
+pkg_name = "{{ project_name }}"
 
 setuptools.setup(
     name=pkg_name,

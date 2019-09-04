@@ -40,14 +40,14 @@ def main():
             'description': 'Remove all generated code as well as all installation files (e.g., node_modules) within the generated code base.'
         },
         {
-            'name': 'install-electron',
-            'func': _install_electron,
+            'name': 'install-gallery-dev',
+            'func': _install_gallery_dev,
             'description': 'Installation step prior to running start-gallery-dev',
         },
         {
             'name': 'start-gallery-dev',
             'func': _start_gallery_dev,
-            'description': 'Start the electron gallery application in development mode (use install-electron first). This also calls "reactopya watch" in the background.'
+            'description': 'Start the electron gallery application in development mode (use install-gallery-dev first). This also calls "reactopya watch" in the background.'
         },
         {
             'name': 'install-jupyter',
@@ -158,7 +158,7 @@ def _list_widgets(config, args):
         print(w['type'])
 
 
-def _install_electron(config, args):
+def _install_gallery_dev(config, args):
     _generate(config=config, args=args)
     cmd = '''
         #!/bin/bash
@@ -294,10 +294,10 @@ def _install_jupyter(config, args):
         yarn install
         echo "======================================= BUNDLE BUILD ======================================="
         yarn build
-        cd ../{project_name}_jup
+        cd ../{project_name}
         pip install -e .
-        mkdir -p {project_name}_jup/dist
-        cp ../{project_name}_bundle/dist/bundle.js {project_name}_jup/dist/bundle.js
+        mkdir -p {project_name}/dist
+        cp ../{project_name}_bundle/dist/bundle.js {project_name}/dist/bundle.js
     '''.format(project_name=config['project_name'])
     shell_cmd = ShellScript(cmd)
     shell_cmd.start()
@@ -307,7 +307,7 @@ def _install_jupyter(config, args):
         raise Exception(
             'Shell script exited with non-zero return code: {}'.format(retcode))
 
-    print('You may now import {}_jup within jupyter notebook or jupyter lab.'.format(
+    print('You may now import {} within jupyter notebook or jupyter lab.'.format(
         config['project_name']))
 
 def _build_colab(config, args):

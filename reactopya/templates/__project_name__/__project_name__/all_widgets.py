@@ -3,7 +3,8 @@
 ## Do not edit manually
 ####################################################################
 
-from reactopya_jup import ReactopyaWidget, ReactopyaColabWidget
+from .reactopyacolabwidget import ReactopyaColabWidget
+from .reactopyaelectronwidget import ReactopyaElectronWidget
 from .init import _get_init_info
 
 {% for widget in widgets -%}
@@ -58,9 +59,12 @@ class {{ widget.type }}:
     def show(self):
         init_info = _get_init_info()
         if init_info['mode'] == 'jupyter':
-            RW = ReactopyaWidget
+            from reactopya_jup import ReactopyaWidget as ReactopyaJupyterWidget
+            RW = ReactopyaJupyterWidget
         elif init_info['mode'] == 'colab':
             RW = ReactopyaColabWidget
+        elif init_info['mode'] == 'electron':
+            RW = ReactopyaElectronWidget
         self._reactopya_widget = RW(
             type='{{ widget.type }}',
             children=[
@@ -71,6 +75,9 @@ class {{ widget.type }}:
         )
         if init_info['mode'] == 'colab':
             self._reactopya_widget._set_bundle_js(init_info['bundle_js'], store_bundle_in_notebook=init_info['store_bundle_in_notebook'])
+        elif init_info['mode'] == 'electron':
+            self._reactopya_widget._set_bundle_fname(init_info['bundle_fname'])
+            self._reactopya_widget._set_electron_src(init_info['electron_src'])
         self._reactopya_widget.on_javascript_state_changed(self._handle_javascript_state_changed)
 
         self._reactopya_widget.show()

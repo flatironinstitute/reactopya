@@ -1,5 +1,4 @@
 from .reactopyawidget import ReactopyaWidget
-from .reactopyacolabwidget import ReactopyaColabWidget
 from ._version import __version__
 
 def _jupyter_nbextension_paths():

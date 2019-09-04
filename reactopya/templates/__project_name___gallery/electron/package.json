@@ -1,5 +1,5 @@
 {
-  "name": "reactopya-gallery-electron",
+  "name": "{{ project_name }}_gallery_electron",
   "version": "0.1.0",
   "main": "src/index.js",
   "author": "Jeremy Magland",
@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "electron": "^5.0.7",
-    "electron-serve": "^0.3.0",
     "tmp": "^0.1.0"
   }
 }
