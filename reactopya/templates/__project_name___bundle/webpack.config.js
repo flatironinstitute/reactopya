@@ -6,7 +6,7 @@
 var path = require('path');
 var version = require('./package.json').version;
 
-var rules = [
+let rules = [
     {
         // JavaScript rules.
         test: /\.js$/,
@@ -48,6 +48,16 @@ var rules = [
         },
     }
 ];
+
+{% if adjust_webpack_rules is defined %}
+{% if adjust_webpack_rules is string %}
+{{ adjust_webpack_rules }}
+{% else %}
+{% for item in adjust_webpack_rules -%}
+{{ item }}
+{% endfor %}
+{% endif %}
+{% endif %}
 
 /*
 The react alias below is needed because otherwise it could resolve to

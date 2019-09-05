@@ -5,7 +5,7 @@ var version = require('./package.json').version;
 
 module.exports = [];
 
-const rules = [
+let rules = [
     {
         // First up, our JavaScript rules.
         test: /\.js$/,
@@ -29,6 +29,9 @@ const rules = [
         }
     },
     {
+        test: /\.html$/, loader: 'html-loader'
+    },
+    {
         // CSS files
         test: /\.css$/,
         use: [
@@ -47,6 +50,16 @@ const rules = [
         },
     },
 ];
+
+{% if adjust_webpack_rules is defined %}
+{% if adjust_webpack_rules is string %}
+{{ adjust_webpack_rules }}
+{% else %}
+{% for item in adjust_webpack_rules -%}
+{{ item }}
+{% endfor %}
+{% endif %}
+{% endif %}
 
 module.exports.push({
     entry: './src/index.js',

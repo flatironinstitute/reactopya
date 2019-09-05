@@ -39,6 +39,7 @@
       "babel-loader": "^8.0.6",
       "concurrently": "^4.1.1",
       "css-loader": "^3.0.0",
+      "html-loader": "^0.5.5",
       "html-webpack-plugin": "^3.2.0",
       "html-webpack-root-plugin": "^0.10.0",
       "link-module-alias": "^1.2.0",
@@ -47,6 +48,13 @@
       "webpack": "^4.35.0",
       "webpack-cli": "^3.3.5",
       "webpack-dev-server": "^3.7.2"
+    },
+    "dev_dependencies_to_add": {
+        {% if package_json.devDependencies is defined %}
+        {% for key, value in package_json.devDependencies.items() -%}
+        "{{ key }}": "{{ value }}"{%- if not loop.last %},{% endif %}
+        {% endfor -%}
+        {% endif -%}
     }
   }
   

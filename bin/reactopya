@@ -496,6 +496,13 @@ def _consolidate_dependencies_in_package_json_text(txt):
             if (key != 'react-dom') and (key != 'react'):
                 obj['dependencies'][key] = val
         del obj['dependencies_to_add']
+    if 'dev_dependencies_to_add' in obj:
+        if 'devDependencies' not in obj:
+            obj['devDependencies'] = {}
+        for key, val in obj['dev_dependencies_to_add'].items():
+            if (key != 'react-dom') and (key != 'react'):
+                obj['devDependencies'][key] = val
+        del obj['dev_dependencies_to_add']
     return json.dumps(obj, indent=4)
 
 

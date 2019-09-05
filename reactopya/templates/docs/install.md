@@ -71,7 +71,7 @@ To view the widgets as standalone desktop windows (outside of the notebook), you
 npm install -g electron
 ```
 
-If you run into permissions problems, follow the instructions [here](https://github.com/sindresorhus/guides/blob/master/npm-global-without-sudo.md) to tell npm to install global packages inside your home directory.
+If you run into permissions problems, follow the instructions [here](https://github.com/sindresorhus/guides/blob/master/npm-global-without-sudo.md) to configure npm to install global packages inside your home directory.
 
 Now you may write a .py script that begins with the following lines:
 

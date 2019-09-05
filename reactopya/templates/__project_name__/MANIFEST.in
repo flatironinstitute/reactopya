@@ -1,1 +1,2 @@
 include {{ project_name }}/dist/bundle.js
+recursive-include {{ project_name }}/electron *
