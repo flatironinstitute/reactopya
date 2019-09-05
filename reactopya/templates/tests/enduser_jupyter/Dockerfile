@@ -15,6 +15,10 @@ RUN curl -sL https://deb.nodesource.com/setup_10.x | bash - && apt-get update &&
 RUN npm install -g yarn
 
 #########################################
+### opengl
+RUN apt-get update && apt-get install -y libgl1-mesa-glx
+
+#########################################
 ### Numpy
 RUN pip install numpy
 
