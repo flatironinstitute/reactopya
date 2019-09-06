@@ -14,20 +14,23 @@ class ReactopyaWidget(widgets.DOMWidget):
     _model_module_version = Unicode('^{}'.format(version)).tag(sync=True)
 
     # props
+    _project_name = Unicode('').tag(sync=True)
     _type = Unicode('').tag(sync=True)
     _children = Dict([]).tag(sync=True)
     _props = Dict({}).tag(sync=True)
     _key = Unicode('').tag(sync=True)
     _reactopya_jup_version = Unicode('').tag(sync=True)
 
-    def __init__(self, *, type, children, props, key=''):
+    def __init__(self, *, project_name, type, children, props, key=''):
         super().__init__()
+        self._m_project_name = project_name
         self._m_type = type
         self._m_children = children
         self._m_props = props
         self._m_key = key
         self._javascript_state_changed_handlers = []
         self.observe(self._on_change)
+        self.set_trait('_project_name', project_name)
         self.set_trait('_type', type)
         self.set_trait('_props', _json_serialize(props))
         self.set_trait('_children', _json_serialize(dict(children=children)))

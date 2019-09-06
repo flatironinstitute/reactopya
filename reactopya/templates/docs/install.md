@@ -31,13 +31,13 @@ jupyter labextension install @jupyter-widgets/jupyterlab-manager
 Next, install the the latest reactopya_jup Python package:
 
 ```
-pip install --upgrade reactopya_jup==0.5.3
+pip install --upgrade reactopya_jup==0.6.0
 ```
 
 For JupyterLab, install the lab extension:
 
 ```
-jupyter labextension install reactopya_jup@0.5.3
+jupyter labextension install reactopya_jup@0.6.0
 ```
 
 For Jupyter Notebook, install and enable the notebook extension:

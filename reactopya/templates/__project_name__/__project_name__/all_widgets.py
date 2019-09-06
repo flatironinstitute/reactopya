@@ -45,6 +45,7 @@ class {{ widget.type }}:
 
     def _serialize(self):
         return dict(
+            project_name='{{ project_name }}',
             type='{{ widget.type }}',
             children=[
                 ch._serialize()
@@ -66,6 +67,7 @@ class {{ widget.type }}:
         elif init_info['mode'] == 'electron':
             RW = ReactopyaElectronWidget
         self._reactopya_widget = RW(
+            project_name='{{ project_name }}',
             type='{{ widget.type }}',
             children=[
                 ch._serialize()

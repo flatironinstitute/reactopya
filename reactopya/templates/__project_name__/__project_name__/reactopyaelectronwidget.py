@@ -7,11 +7,12 @@ from .shellscript import ShellScript
 
 class ReactopyaElectronWidget:
     """Reactopya electron widget"""
-    def __init__(self, *, type, children, props, key=''):
+    def __init__(self, *, project_name, type, children, props, key=''):
         self._model_id = uuid.uuid4().hex.upper()
+        self._project_name = project_name
         self._type = type
         self._children = [
-            ReactopyaElectronWidget(type=ch['type'], children=ch.get('children', []), props=ch.get('props', {}), key=ch.get('key', ''))
+            ReactopyaElectronWidget(project_name=ch.get('project_name', self._project_name), type=ch['type'], children=ch.get('children', []), props=ch.get('props', {}), key=ch.get('key', ''))
             for ch in children
         ]
         self._props = props
@@ -58,6 +59,7 @@ class ReactopyaElectronWidget:
 
     def _serialize(self):
         return dict(
+            project_name=self._project_name,
             type=self._type,
             children=[ch._serialize() for ch in self._children],
             props=self._props,

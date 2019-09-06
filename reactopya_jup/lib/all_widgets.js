@@ -78,6 +78,7 @@ class ReactopyaWidgetModel extends widgets.DOMWidgetModel {
             _model_module_version : version,
             _view_module_version : version,
 
+            _project_name: 'unknown',
             _type: 'unknown',
             _props: {},
             _children: {}
@@ -94,13 +95,14 @@ class ReactopyaWidgetView extends widgets.DOMWidgetView {
         this.div=document.createElement('div');
         this.el.appendChild(this.div);
 
+        const project_name = this.model.get('_project_name');
         const type = this.model.get('_type');
         let props = this.model.get('_props');
         let key = this.model.get('_key')
         
         props.javaScriptPythonStateModel = this.model.javaScriptPythonStateModel;
         
-        window.reactopya.widgets[type].render(this.div, this.model.children, props, key || undefined);
+        window.reactopya.widgets[project_name][type].render(this.div, this.model.children, props, key || undefined);
     }
 }
 

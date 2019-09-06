@@ -77,6 +77,7 @@ async function show() {
     //     "download_from": "spikeforest.public"
     // };
 
+    const project_name = '{{ project_name }}';
     const type = widget_spec.type;
     const children = widget_spec.children || [];
     const props = widget_spec.props || {};
@@ -84,24 +85,27 @@ async function show() {
 
     const js = `
     {
-        document.title = '${type}';
+        document.title = '${type} (${project_name})';
         const div = document.getElementById("root");
         const children = JSON.parse(\`${JSON.stringify(children)}\`);
         const props = JSON.parse(\`${JSON.stringify(props)}\`);
         let process0 = new window.ReactopyaElectronPythonProcess('${message_dir}', children);
         let model0 = process0.javaScriptPythonStateModel();
         props.javaScriptPythonStateModel = model0;
-        set_models_on_children(children, model0);
-        window.reactopya.widgets.${type}.render(div, children, props, '${key}');
+        set_models_on_children('${project_name}', children, model0);
+        window.reactopya.widgets.${project_name}.${type}.render(div, children, props, '${key}');
         process0.start();
 
-        function set_models_on_children(children1, model1) {
+        function set_models_on_children(parent_project_name, children1, model1) {
             for (let i=0; i<children1.length; i++) {
+                if (!children1[i].project_name) {
+                    children1[i].project_name = parent_project_name;
+                }
                 let props = children1[i].props || {};
                 props.javaScriptPythonStateModel = model1.childModel(i);
                 children1[i].props = props;
 
-                set_models_on_children(children1[i].children||[], model1.childModel(i));
+                set_models_on_children(children1[i].project_name, children1[i].children||[], model1.childModel(i));
             }
         }
     }
