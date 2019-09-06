@@ -55,6 +55,11 @@ def main():
             'description': 'Install the package for jupyter notebook'
         },
         {
+            'name': 'build-bundle',
+            'func': _build_bundle,
+            'description': 'Build or rebuild the javascript bundle for this project without installing dependencies'
+        },
+        {
             'name': 'publish-pypi',
             'func': _publish_pypi,
             'description': 'Publish generated python package to PiPI'
@@ -313,6 +318,23 @@ def _install_jupyter(config, args):
     print('You may now import {} within jupyter notebook or jupyter lab.'.format(
         config['project_name']))
 
+def _build_bundle(config, args):
+    _generate(config=config, args=args)
+    cmd = '''
+        #!/bin/bash
+        set -ex
+        cd generated/{project_name}_bundle
+        echo "======================================= BUNDLE BUILD ======================================="
+        yarn build
+    '''.format(project_name=config['project_name'])
+    shell_cmd = ShellScript(cmd)
+    shell_cmd.start()
+    retcode = shell_cmd.wait()
+
+    if retcode != 0:
+        raise Exception(
+            'Shell script exited with non-zero return code: {}'.format(retcode))
+
 def _publish_pypi(config, args):
     _generate(config=config, args=args)
     cmd = '''
@@ -428,7 +450,7 @@ def _load_widgets_config():
 
 def _generate_directory(template_source_path, dest_path, config, args, do_render=True):
     if args.verbose:
-        print('GENERATE DIRECTORY: {} -> '.format(template_source_path, dest_path))
+        print('GENERATE DIRECTORY: {} -> {}'.format(template_source_path, dest_path))
     num_files_processed = 0
     num_files_changed = 0
     fnames = [
@@ -489,6 +511,8 @@ def _generate_directory(template_source_path, dest_path, config, args, do_render
                 txt2 = txt
             else:
                 if do_render:
+                    if args.verbose:
+                        print('RENDERING FILE: {} -> {}'.format(path_src, path_dst))
                     txt2 = Template(txt).render(config)
                     if fname == 'package.json':
                         txt2 = _consolidate_dependencies_in_package_json_text(txt2)

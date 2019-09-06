@@ -15,16 +15,26 @@ export default class PythonInterface {
     }
     start() {
         console.info(`Starting python interface for ${this._reactComponent.constructor.name}`);
+        if (this._reactComponent.props.reactopya_init_state) {
+            // this is for snapshots (static html exports)
+            this._reactComponent.setState(this._reactComponent.props.reactopya_init_state);
+        }
         if (this._reactComponent.props.javaScriptPythonStateModel) {
             this._reactComponent.props.javaScriptPythonStateModel.onPythonStateChanged((state) => {
                 this._reactComponent.setState(state);
             });
         }
         else {
-            if (this._pythonProcess) return;
-            this._pythonProcess = new PythonProcess(this._pythonModuleName, this._type);
-            this._pythonProcess.onReceiveMessage(this._handleReceiveMessageFromProcess);
-            this._pythonProcess.start();
+            if ((!window.reactopya) || (!window.reactopya.disable_python_backend)) {
+                if (!this._pythonProcess) {
+                    this._pythonProcess = new PythonProcess(this._pythonModuleName, this._type);
+                    this._pythonProcess.onReceiveMessage(this._handleReceiveMessageFromProcess);
+                    this._pythonProcess.start();
+                }
+            }
+            else {
+                console.info('Python backend disabled');
+            }
             window.addEventListener('beforeunload', () => {
                 this.stop();
                 window.removeEventListener('beforeunload', this._cleanup); // remove the event handler for normal unmounting
@@ -87,9 +97,10 @@ export default class PythonInterface {
 
     _cleanup() {
         if (!this._reactComponent.props.javaScriptPythonStateModel) {
-            if (!this._pythonProcess) return;
-            this._pythonProcess.stop();
-            this._pythonProcess = null;
+            if (this._pythonProcess) {
+                this._pythonProcess.stop();
+                this._pythonProcess = null;
+            }
         }
     }
 

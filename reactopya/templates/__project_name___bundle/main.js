@@ -48,7 +48,6 @@ class ChildWrapper extends Component {
                     new_props[key] = this.props[key];
                 }
             }
-            console.log('--- do render child from other package!', child);
             window.reactopya.widgets[child.project_name][child.type].render(
                 this.divRef.current,
                 child.children,
