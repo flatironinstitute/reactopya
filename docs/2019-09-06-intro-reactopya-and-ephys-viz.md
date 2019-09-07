@@ -63,8 +63,8 @@ the python backend disabled. But that part works in the notebook.)
 
 In addition I have provided a second snapshot demonstrating compatibility with vtk.js.
 
-* [placefield.bon03.nwb.html](https://www.dropbox.com/s/whfkqctum6ebqk8/placefield.bon03.nwb.html?dl=0)
+There are now three widget snapshots, and I found an easier way to share them: https://users.flatironinstitute.org/~magland/reactopya-snapshots/
 
-* [quas3_surface.html](https://www.dropbox.com/s/6kcezc1tdg1sw2j/quas3_surface.html?dl=0)
+The new one is: https://users.flatironinstitute.org/~magland/reactopya-snapshots/cortical_surface_from_EC2.html
 
-* Folder of other snapshots: [dropbox_folder](https://www.dropbox.com/sh/j1yhalbjocuxhj2/AAAaHOCCHW6YqLjc-6FhxBBca?dl=0)
+It was generated from this notebook: https://github.com/flatironinstitute/ephys-viz/blob/master/notebook_examples/cortical_surface_from_EC2.ipynb

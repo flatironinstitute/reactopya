@@ -420,12 +420,17 @@ def _load_config():
         config['package_json'] = {}
     if 'dependencies' not in config['package_json']:
         config['package_json']['dependencies'] = {}
+    if 'devDependencies' not in config['package_json']:
+        config['package_json']['devDependencies'] = {}
     if os.path.exists('package.json'):
         with open('package.json', 'r') as f:
             pj = json.load(f)
         dep = pj.get('dependencies', {})
         for key, val in dep.items():
             config['package_json']['dependencies'][key] = val
+        dev_dep = pj.get('devDependencies', {})
+        for key, val in dev_dep.items():
+            config['package_json']['devDependencies'][key] = val
     
     config['reactopya_version'] = reactopya.__version__
 
