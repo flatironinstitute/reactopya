@@ -44,7 +44,7 @@ class ReactopyaWidget(widgets.DOMWidget):
         self.send(dict(
             name='setPythonState',
             child_indices=child_indices,
-            state=state
+            state=_json_serialize(state)
         ))
     
     def on_javascript_state_changed(self, handler):
