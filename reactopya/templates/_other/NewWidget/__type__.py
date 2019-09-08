@@ -6,9 +6,12 @@ class {{ NewWidget.type }}(Component):
         super().__init__()
 
     def javascript_state_changed(self, prev_state, state):
-        self.set_python_state(dict(status='running', status_message='Running'))
+        self._set_status('running', 'Running {{ NewWidget.type }}')
 
-        self.set_python_state(dict(
-            status='error',
-            status_message='Not yet implemented'
-        ))
+        self._set_status('finished', 'Finished {{ NewWidget.type }}')
+    
+    def _set_error(self, error_message):
+        self._set_status('error', error_message)
+    
+    def _set_status(self, status, status_message=''):
+        self.set_python_state(dict(status=status, status_message=status_message))
