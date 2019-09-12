@@ -107,6 +107,7 @@ export default class MainWindow extends Component {
         }
         for (let widget of widgets) {
             let model = new ReactopyaModel(widget.project_name, widget.type);
+            // do this before making the callback
             model.addChildModelsFromSerializedChildren(widget.children || []);
             let pythonProcess = new PythonProcess(widget.project_name, widget.type, widget.children || [], widget.props || {}, widget.key || '', model);
             widget.pythonProcess = pythonProcess;

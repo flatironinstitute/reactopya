@@ -51,6 +51,14 @@ export default class ReactopyaModel {
                 });
             }
         });
+        model.onChildModelAdded((data) => {
+            for (let handler of this._childModelAddedHandlers) {
+                handler({
+                    _childId: childId,
+                    data: data
+                });
+            }
+        });
         model.onStart(() => {
             this.start();
         });
@@ -59,7 +67,11 @@ export default class ReactopyaModel {
         });
         this._childModels[childId + ''] = model;
         for (let handler of this._childModelAddedHandlers) {
-            handler(childId, projectName, type);
+            handler({
+                childId: childId,
+                projectName: projectName,
+                type: type
+            });
         }
         return model;
     }

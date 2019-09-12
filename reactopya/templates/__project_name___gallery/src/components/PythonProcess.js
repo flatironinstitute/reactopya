@@ -31,6 +31,12 @@ export default class PythonProcess {
         reactopyaModel.onStop(() => {
             this.stop();
         });
+        reactopyaModel.onChildModelAdded((data) => {
+            this._sendMessage({
+                name: 'addChild',
+                data: data
+            });
+        });
     }
 
     start() {

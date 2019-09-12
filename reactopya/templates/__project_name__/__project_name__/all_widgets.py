@@ -196,10 +196,19 @@ class {{ widget.type }}:
             if len(child_children) > 0:
                 W.add_serialized_children(child_children)
     
+    def _handle_add_child_data(self, data):
+        if '_childId' in data:
+            child_id = str(data['_childId'])
+            self._children[child_id]._handle_add_child_data(data['data'])
+            return
+        self._handle_add_child(data['childId'], data['projectName'], data['type'])
+    
     # internal function to handle incoming message (coming from javascript component)
     def _handle_message_process_mode(self, msg):
         if msg['name'] == 'setJavaScriptState':
             self._handle_javascript_state_changed(msg['state'])
+        elif msg['name'] == 'addChild':
+            self._handle_add_child_data(msg['data'])
         elif msg['name'] == 'quit':
             self._quit = True
         else:
