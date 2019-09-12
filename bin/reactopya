@@ -291,7 +291,7 @@ def _new_widget(config, args):
 
 def _append_text_file(fname, txt):
     txt2 = _read_text_file(fname) + '\n' + txt
-    _write_text_file_if_changed(fname, txt2)
+    _write_text_file_if_changed(fname, txt2, None)
 
 
 def _install_jupyter(config, args):
@@ -439,6 +439,9 @@ def _load_config():
 
 
 def _load_widgets_config():
+    with open('reactopya.config.json', 'r') as f:
+        config = json.load(f)  # for checking project_name below
+
     dirnames = [
         name for name in os.listdir('widgets')
         if os.path.isdir(os.path.join('widgets', name))
@@ -449,6 +452,10 @@ def _load_widgets_config():
         if os.path.exists(json_fname):
             with open(json_fname, 'r') as f:
                 widget = json.load(f)
+            if 'project_name' not in widget:
+                raise Exception('Missing field "project_name" in {}'.format(json_fname))
+            if widget['project_name'] != config['project_name']:
+                raise Exception('Package name {} is not equal to {} in {}'.format(widget['project_name'], config['project_name'], json_fname)) 
             ret.append(widget)
     return ret
 
@@ -507,10 +514,12 @@ def _generate_directory(template_source_path, dest_path, config, args, do_render
         path_dst = os.path.join(dest_path, fnames_dst[i])
         if _has_binary_extension(path_src):
             data = _read_binary_file(path_src)
-            if _write_binary_file_if_changed(path_dst, data):
+            st_mode = os.stat(path_src).st_mode
+            if _write_binary_file_if_changed(path_dst, data, st_mode):
                 num_files_changed = num_files_changed + 1
         else:
             txt = _read_text_file(path_src)
+            st_mode = os.stat(path_src).st_mode
             if fname == 'reactopya.config.json':
                 txt = json.dumps(config, indent=4)
                 txt2 = txt
@@ -524,7 +533,7 @@ def _generate_directory(template_source_path, dest_path, config, args, do_render
                 else:
                     txt2 = txt
             num_files_processed = num_files_processed + 1
-            if _write_text_file_if_changed(path_dst, txt2):
+            if _write_text_file_if_changed(path_dst, txt2, st_mode):
                 num_files_changed = num_files_changed + 1
     for i, dirname in enumerate(dirnames):
         if dirname not in ['node_modules', '.git', '_other']:
@@ -579,30 +588,37 @@ def _write_text_file(fname, txt):
     with open(fname, 'w') as f:
         f.write(txt)
 
-def _write_text_file_if_changed(fname, txt):
+def _write_text_file_if_changed(fname, txt, st_mode):
     if os.path.exists(fname):
         txt_existing = _read_text_file(fname)
+        st_mode_existing = os.stat(fname).st_mode
     else:
         txt_existing = None
-    if txt != txt_existing:
+        st_mode_existing = None
+    if (txt != txt_existing) or ((st_mode is not None) and (st_mode != st_mode_existing)):
         print('Writing: {}'.format(fname))
         with open(fname, 'w') as f:
             f.write(txt)
+        os.chmod(fname, st_mode)
         return True
     else:
         # print('Unmodified: {}'.format(fname))
         return False
 
 
-def _write_binary_file_if_changed(fname, data):
+def _write_binary_file_if_changed(fname, data, st_mode):
     if os.path.exists(fname):
         data_existing = _read_binary_file(fname)
+        st_mode_existing = os.stat(fname).st_mode
     else:
         data_existing = None
-    if data != data_existing:
+        st_mode_existing = None
+    print('======', fname, st_mode, st_mode_existing)
+    if (data != data_existing) or (st_mode != st_mode_existing):
         print('Writing: {}'.format(fname))
         with open(fname, 'wb') as f:
             f.write(data)
+        os.chmod(fname, st_mode)
         return True
     else:
         # print('Unmodified: {}'.format(fname))

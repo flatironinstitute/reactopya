@@ -1,0 +1,70 @@
+#!/usr/bin/env python
+
+import argparse
+from argparse import RawTextHelpFormatter
+import json
+import importlib
+
+def main():
+    commands = [
+        {
+            'name': 'show',
+            'func': _show,
+            'description': 'Show a widget'
+        }
+    ]
+    commands_by_name = {}
+    for x in commands:
+        commands_by_name[x['name']] = x['func']
+
+    command_description = '\n\n'.join(
+        ['{}\n    {}'.format(x['name'], x['description']) for x in commands])
+
+    parser = argparse.ArgumentParser(
+        description="Command-line interface for {{ project_name }}", formatter_class=RawTextHelpFormatter)
+    parser.add_argument(
+        'command', help='One of the following:\n\n{}\n'.format(command_description))
+    parser.add_argument('--widget', default='', help='.json file containing the spec of the widget', required=False)
+
+    args = parser.parse_args()
+    command = args.command
+
+    if command not in commands_by_name.keys():
+        raise Exception('Unrecognized command: {}'.format(command))
+
+    commands_by_name[command](args=args)
+
+def _show(*, args):
+    widget_fname = args.widget
+    if not widget_fname:
+        raise Exception('Missing required argument: --widget')
+    with open(widget_fname, 'r') as f:
+        widget = json.load(f)
+    X = _make_widget_instance(widget, '{{ project_name }}')
+    X.show()
+
+_global = dict(
+    _initialized_project_names={}
+)
+
+def _make_widget_instance(widget, default_project_name):
+    project_name = widget.get('project_name', default_project_name)
+    type = widget['type']
+    props = widget.get('props', {})
+    children = widget.get('children', [])
+    mod = importlib.import_module(project_name)
+    if project_name not in _global['_initialized_project_names']:
+        mod.init_electron()
+        _global['_initialized_project_names'][project_name] = True
+    children2 = [
+        _make_widget_instance(ch, project_name)
+        for ch in children
+    ]
+    WIDGET = getattr(mod, type)
+    X = WIDGET(*children2, **props)
+    return X
+    
+
+
+if __name__ == '__main__':
+    main()

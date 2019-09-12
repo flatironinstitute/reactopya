@@ -29,6 +29,7 @@ class ReactopyaWidget(widgets.DOMWidget):
         self._m_props = props
         self._m_key = key
         self._javascript_state_changed_handlers = []
+        self._add_dynamic_child_handlers = []
         self.observe(self._on_change)
         self.set_trait('_project_name', project_name)
         self.set_trait('_type', type)
@@ -49,7 +50,10 @@ class ReactopyaWidget(widgets.DOMWidget):
     
     def on_javascript_state_changed(self, handler):
         self._javascript_state_changed_handlers.append(handler)
-
+    
+    def on_add_dynamic_child(self, handler):
+        self._add_dynamic_child_handlers.append(handler)
+    
     def _handle_message(self, _, content, buffers):
         name = content.get('name', '')
         if name == 'setJavaScriptState':
@@ -57,6 +61,12 @@ class ReactopyaWidget(widgets.DOMWidget):
             child_indices = content.get('child_indices', [])
             for handler in self._javascript_state_changed_handlers:
                 handler(state, child_indices)
+        elif name == 'addDynamicChild':
+            project_name = content.get('project_name')
+            type = content.get('type')
+            child_id = content.get('child_id')
+            for handler in self._add_dynamic_child_handlers:
+                handler(child_id, project_name, type)
         else:
             raise Exception('Unexpected message name: {}'.format(name))
 

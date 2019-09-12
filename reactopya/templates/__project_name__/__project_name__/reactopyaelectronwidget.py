@@ -57,6 +57,9 @@ class ReactopyaElectronWidget:
     def on_javascript_state_changed(self, handler):
         self._javascript_state_changed_handlers.append(handler)
 
+    def on_add_dynamic_child(self, handler):
+        print('WARNING: not yet implemented: ReactopyaElectronWidget:on_add_dynamic_child')
+
     def _serialize(self):
         return dict(
             project_name=self._project_name,

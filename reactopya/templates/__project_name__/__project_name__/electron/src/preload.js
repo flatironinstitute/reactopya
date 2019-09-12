@@ -133,7 +133,6 @@ async function take_py_messages(dirname) {
     let messages = [];
     for (let file of files) {
         if (file.endsWith('.py.msg')) {
-            console.log(`pymessage ${file}`)
             let fname = dirname + '/' + file;
             let msg = await read_json_file(fname);
             await unlink(fname);

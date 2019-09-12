@@ -8,7 +8,7 @@ setuptools.setup(
     author="{{ author }}",
     description="{{ description }}",
     packages=setuptools.find_packages(),
-    scripts=[],
+    scripts=['bin/{{ project_name }}'],
     include_package_data=True,
     install_requires=[
         'reactopya',

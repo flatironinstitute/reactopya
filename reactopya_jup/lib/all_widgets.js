@@ -21,6 +21,14 @@ class ReactopyaWidgetModel extends widgets.DOMWidgetModel {
                 state: state
             });
         });
+        this.javaScriptPythonStateModel.onAddDynamicChild(function(childId, projectName, type) {
+            that.send({
+                name: 'addDynamicChild',
+                child_id: childId,
+                project_name: projectName,
+                type: type
+            });
+        });
         this.on('change:_children', function() {
             that.initialize_children();
         });
@@ -62,7 +70,8 @@ class ReactopyaWidgetModel extends widgets.DOMWidgetModel {
                 for (let ind of child_indices) {
                     ptr = ptr.children[ind];
                 }
-                ptr.props.javaScriptPythonStateModel.setPythonState(state);
+                let model0 = ptr.javaScriptPythonStateModel || ptr.props.javaScriptPythonStateModel;
+                model0.setPythonState(state);
             }
         }
         else {
@@ -112,18 +121,46 @@ class JavaScriptPythonStateModel {
         this._javaScriptStateStringified = {};
         this._pythonStateChangedHandlers = [];
         this._javaScriptStateChangedHandlers = [];
+        this._addDynamicChildHandlers = [];
+        this._dynamicChildModels = {};
     }
     setPythonState(state) {
+        if (state._dynamicChildId) {
+            this._dynamicChildModels[state._dynamicChildId].setPythonState(state.state);
+            return;
+        }
         this._setStateHelper(state, this._pythonStateStringified, this._pythonStateChangedHandlers);
     }
     setJavaScriptState(state) {
         this._setStateHelper(state, this._javaScriptStateStringified, this._javaScriptStateChangedHandlers);
+    }
+    addDynamicChild(childId, projectName, type) {
+        if (childId in this._dynamicChildModels) {
+            return this._dynamicChildModels[childId];
+        }
+        let model = new JavaScriptPythonStateModel();
+        model.onJavaScriptStateChanged((state) => {
+            for (let handler of this._javaScriptStateChangedHandlers) {
+                handler({
+                    _dynamicChildId: childId,
+                    state: state
+                });
+            }
+        });
+        this._dynamicChildModels[childId] = model;
+        for (let handler of this._addDynamicChildHandlers) {
+            handler(childId, projectName, type);
+        }
+        return model;
     }
     onPythonStateChanged(handler) {
         this._pythonStateChangedHandlers.push(handler);
     }
     onJavaScriptStateChanged(handler) {
         this._javaScriptStateChangedHandlers.push(handler);
+    }
+    onAddDynamicChild(handler) {
+        this._addDynamicChildHandlers.push(handler);
     }
     _setStateHelper(state, existingStateStringified, handlers) {
         let changedState = {};

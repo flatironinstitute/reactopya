@@ -5,6 +5,7 @@ export default class PythonInterface {
     constructor(reactComponent, config) {
         this._reactComponent = reactComponent;
         this._pythonModuleName = config.pythonModuleName || '{{ project_name }}_widgets';
+        this._projectName = config.project_name;
         this._type = config.type;
         this._syncPythonStateToStateKeys = config.pythonStateKeys;
         this._syncStateToJavaScriptStateKeys = config.javaScriptStateKeys;
@@ -12,15 +13,23 @@ export default class PythonInterface {
         this._pythonState = {};
         this._javaScriptState = {};
         this._pendingJavaScriptState = {};
+        this._javaScriptPythonStateModel = reactComponent.javaScriptPythonStateModel || reactComponent.props.javaScriptPythonStateModel;
+        if ((!this._javaScriptPythonStateModel) && (reactComponent.props.reactopyaParent)) {
+            let parent = reactComponent.props.reactopyaParent;
+            let parentModel = parent.javaScriptPythonStateModel || parent.props.javaScriptPythonStateModel;
+            let childId = reactComponent.props.reactopyaChildId;
+            let model = parentModel.addDynamicChild(childId, this._projectName, this._type);
+            reactComponent.javaScriptPythonStateModel = model; // i don't think we can set the props here
+            this._javaScriptPythonStateModel = model;
+        }
     }
     start() {
-        console.info(`Starting python interface for ${this._reactComponent.constructor.name}`);
         if (this._reactComponent.props.reactopya_init_state) {
             // this is for snapshots (static html exports)
             this._reactComponent.setState(this._reactComponent.props.reactopya_init_state);
         }
-        if (this._reactComponent.props.javaScriptPythonStateModel) {
-            this._reactComponent.props.javaScriptPythonStateModel.onPythonStateChanged((state) => {
+        if (this._javaScriptPythonStateModel) {
+            this._javaScriptPythonStateModel.onPythonStateChanged((state) => {
                 this._reactComponent.setState(state);
             });
         }
@@ -53,7 +62,7 @@ export default class PythonInterface {
         this._copyStateToJavaScriptState();
     }
     setJavaScriptState(state) {
-        if ((!this._reactComponent.props.javaScriptPythonStateModel) && (!this._pythonProcess)) {
+        if ((!this._javaScriptPythonStateModel) && (!this._pythonProcess)) {
             for (let key in state) {
                 this._pendingJavaScriptState[key] = state[key];
             }
@@ -67,8 +76,8 @@ export default class PythonInterface {
             }
         }
         if (Object.keys(newJavaScriptState).length > 0) {
-            if (this._reactComponent.props.javaScriptPythonStateModel) {
-                this._reactComponent.props.javaScriptPythonStateModel.setJavaScriptState(newJavaScriptState);
+            if (this._javaScriptPythonStateModel) {
+                this._javaScriptPythonStateModel.setJavaScriptState(newJavaScriptState);
             }
             else if (this._pythonProcess) {
                 this._pythonProcess.sendMessage({
@@ -77,7 +86,7 @@ export default class PythonInterface {
                 });
             }
             else {
-                console.error('Problem in setJavaScriptState: unable to find one of: props.javaScriptPythonStateModel, _pythonProcess');
+                console.error('Problem in setJavaScriptState: unable to find one of: this.javaScriptPythonStateModel, props.javaScriptPythonStateModel, _pythonProcess');
             }
         }
     }
@@ -96,7 +105,7 @@ export default class PythonInterface {
     }
 
     _cleanup() {
-        if (!this._reactComponent.props.javaScriptPythonStateModel) {
+        if (!this._javaScriptPythonStateModel) {
             if (this._pythonProcess) {
                 this._pythonProcess.stop();
                 this._pythonProcess = null;

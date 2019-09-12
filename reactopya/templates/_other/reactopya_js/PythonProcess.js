@@ -21,7 +21,7 @@ export default class PythonProcess {
             this._process.start();
         }
         else {
-            console.error('Found no mechanism to start python process.');
+            console.error('Found no mechanism to start python process.', this._componentModule, this.componentName);
             return;
         }
     }

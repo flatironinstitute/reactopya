@@ -8,6 +8,9 @@ export default class {{ NewWidget.type }} extends Component {
     constructor(props) {
         super(props);
         this.state = {
+            // javascript state
+            
+            // python state
             status: '',
             status_message: ''
         }

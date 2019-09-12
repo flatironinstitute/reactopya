@@ -8,6 +8,10 @@ import os
 from .reactopyacolabwidget import ReactopyaColabWidget
 from .reactopyaelectronwidget import ReactopyaElectronWidget
 from .init import _get_init_info
+import importlib
+import logging
+# logging.basicConfig(filename='/tmp/reactopya_debug', level=logging.INFO)
+logging.basicConfig(filename='/tmp/reactopya_debug', level=logging.CRITICAL)
 
 {% for widget in widgets -%}
 from .widgets import {{ widget.type }} as {{ widget.type }}Orig
@@ -29,6 +33,7 @@ class {{ widget.type }}:
         self._javascript_state = dict()  # for snapshot
         self._python_state = dict()  # for snapshot
         self._component.init_jupyter()
+        self._dynamic_children = dict()
 
     def _connect_children(self, children, child_indices):
         for i, ch in enumerate(children):
@@ -40,6 +45,7 @@ class {{ widget.type }}:
             lambda state: self._handle_python_state_changed(state, child_indices))
 
     def _handle_python_state_changed(self, state, child_indices):
+        logging.info('--- handle_python_state_changed {{ widget.type }} {}'.format(state))
         ptr = self
         for ind in child_indices:
             ptr = ptr._children[ind]
@@ -49,12 +55,26 @@ class {{ widget.type }}:
             self._reactopya_widget.set_python_state(state, child_indices)
 
     def _handle_javascript_state_changed(self, state, child_indices):
+        logging.info('--- handle_javascript_state_changed {{ widget.type }} {}'.format(state))
         ptr = self
         for ind in child_indices:
             ptr = ptr._children[ind]
         for key, val in state.items():
             ptr._javascript_state[key] = val  # for snapshot
+        if '_dynamicChildId' in state:
+            child_id = state['_dynamicChildId']
+            ptr._dynamic_children[child_id]._handle_javascript_state_changed(state['state'], [])
+            return
         ptr._component._handle_javascript_state_changed(state)
+    
+    def _handle_add_dynamic_child(self, child_id, project_name, type):
+        logging.info('--- handle_add_dynamic_child {{ widget.type }} {} {} {}'.format(child_id, project_name, type))
+        mod = importlib.import_module(project_name)
+        WIDGET = getattr(mod, type)
+        W = WIDGET()
+        self._dynamic_children[child_id] = W
+        W._component.on_python_state_changed(
+            lambda state: self._handle_python_state_changed(dict(_dynamicChildId=child_id, state=state), []))
 
     def _serialize(self, include_javascript_state=False, include_python_state=False, include_bundle_fname=False):
         obj = dict(
@@ -106,6 +126,9 @@ class {{ widget.type }}:
             self._reactopya_widget._set_electron_src(init_info['electron_src'])
         self._reactopya_widget.on_javascript_state_changed(
             self._handle_javascript_state_changed)
+        self._reactopya_widget.on_add_dynamic_child(
+            self._handle_add_dynamic_child
+        )
 
         self._reactopya_widget.show()
 
