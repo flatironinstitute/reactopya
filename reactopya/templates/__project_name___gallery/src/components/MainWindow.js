@@ -176,7 +176,6 @@ export default class MainWindow extends Component {
 }
 
 function _create_element(project_name, type, children, props, key, reactopyaModel) {
-    console.log('_create_element', project_name, type, children, props, key, reactopyaModel);
     let Comp = allWidgets[type];
     return (
         <Comp {...(props)} key={key || undefined} reactopyaModel={reactopyaModel}>

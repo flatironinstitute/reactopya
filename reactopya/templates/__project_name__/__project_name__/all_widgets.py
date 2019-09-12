@@ -10,10 +10,9 @@ from .reactopyaelectronwidget import ReactopyaElectronWidget
 from .init import _get_init_info
 import importlib
 import logging
-import sys
 import time
 # logging.basicConfig(filename='/tmp/reactopya_debug', level=logging.INFO)
-logging.basicConfig(filename='/tmp/reactopya_debug', level=logging.CRITICAL)
+# logging.basicConfig(filename='/tmp/reactopya_debug', level=logging.CRITICAL)
 
 {% for widget in widgets -%}
 from .widgets import {{ widget.type }} as {{ widget.type }}Orig
@@ -24,22 +23,22 @@ class {{ widget.type }}:
     """Jupyter widget for {{ widget.type }}"""
 
     def __init__(self, *args, **kwargs):
-        super().__init__()
         self._props = dict(**kwargs)
         self._children = {}
         self._child_ids = []
         for i, ch in enumerate(list(args)):
             self._children[i] = ch
             self._child_ids.append(str(i))
+        self._connect_children(self._children)
         self._component = {{ widget.type }}Orig()
         self._component.on_python_state_changed(
             lambda state: self._handle_python_state_changed(state))
-        self._connect_children(self._children)
         self._reactopya_widget = None
         self._javascript_state = dict()  # for snapshot
         self._python_state = dict()  # for snapshot
         self._running_process = False  # for run_process_mode
-        self._component._initial_update()
+        self._python_state_changed_handlers = []
+        # self._component._initial_update()
 
     def _connect_children(self, children):
         for child_id, ch in children.items():
@@ -47,32 +46,34 @@ class {{ widget.type }}:
 
     def _connect_child(self, child_id, child):
         child_id = str(child_id)
-        child._component.on_python_state_changed(
+        child.on_python_state_changed(
             lambda state: self._handle_python_state_changed(dict(_childId=child_id, state=state)))
 
     def _handle_python_state_changed(self, state):
-        logging.info('--- handle_python_state_changed {{ widget.type }} {}'.format(state))
         for key, val in state.items():
             self._python_state[key] = val  # for snapshot
         # if self._reactopya_widget:
         #     self._reactopya_widget.set_python_state(state)
         if self._running_process:
             msg = {"name": "setPythonState", "state": state}
-            self._send_message_to_running_process(msg)
+            self._send_message_to_parent_process(msg)
+        for handler in self._python_state_changed_handlers:
+            handler(state)
+    
+    def on_python_state_changed(self, handler):
+        self._python_state_changed_handlers.append(handler)
+
     
     # internal function to send message to javascript component
-    def _send_message_to_running_process(self, msg):
+    def _send_message_to_parent_process(self, msg):
         import simplejson
-        print(simplejson.dumps(msg, ignore_nan=True), file=self.original_stdout)
-        self._flush_all()
-
-    def _flush_all(self):
-        self.original_stdout.flush()
-        sys.stdout.flush()
-        sys.stderr.flush()
+        txt = simplejson.dumps(msg, ignore_nan=True)
+        msg_path = os.path.join(self._run_process_mode_dirpath, '{}.msg-from-python'.format(self._run_process_mode_message_index))
+        self._run_process_mode_message_index = self._run_process_mode_message_index + 1
+        write_text_file(msg_path + '.tmp', txt)
+        os.rename(msg_path + '.tmp', msg_path)
 
     def _handle_javascript_state_changed(self, state):
-        logging.info('--- handle_javascript_state_changed {{ widget.type }} {}'.format(state))
         for key, val in state.items():
             self._javascript_state[key] = val  # for snapshot
         if '_childId' in state:
@@ -83,13 +84,12 @@ class {{ widget.type }}:
     
     def _handle_add_child(self, child_id, project_name, type):
         child_id = str(child_id)
-        logging.info('--- handle_add_child {{ widget.type }} {} {} {}'.format(child_id, project_name, type))
         mod = importlib.import_module(project_name)
         WIDGET = getattr(mod, type)
         W = WIDGET()
+        self._connect_child(child_id, W)
         self._children[child_id] = W
         self._child_ids.append(child_id)
-        self._connect_child(child_id, W)
         return W
 
     def _serialize(self, include_javascript_state=False, include_python_state=False, include_bundle_fname=False):
@@ -148,33 +148,46 @@ class {{ widget.type }}:
 
         self._reactopya_widget.show()
 
-    def run_process_mode(self):
+    def run_process_mode(self, dirpath):
+        self._run_process_mode_dirpath = dirpath
+        self._run_process_mode_message_index = 100000
         import simplejson
         import select
         self._running_process = True
         self._quit = False
-        self.original_stdout = sys.stdout
-        sys.stdout = sys.stderr
-        iterate_timeout = 1
-        self._component.on_python_state_changed(lambda state: self._handle_python_state_changed(state))
-        self._component._initial_update()
+        # self._component.on_python_state_changed(lambda state: self._handle_python_state_changed(state))
         while True:
-            self._flush_all()
-            stdin_available = select.select([sys.stdin], [], [], iterate_timeout)[0]
-            if stdin_available:
-                line = sys.stdin.readline()
-                try:
-                    msg = simplejson.loads(line)
-                except:
-                    print(line)
-                    raise Exception('Error parsing message.')
-                self._handle_message_process_mode(msg)
+            messages = self._read_messages(self._run_process_mode_dirpath)
+            if len(messages) > 0:
+                for msg in messages:
+                    self._handle_message_process_mode(msg)
             else:
-                 self._component.iterate()
-            self._flush_all()
+                self._component.iterate()
             if self._quit:
                 break
             time.sleep(0.01)
+            # time.sleep(1)
+    
+    def _read_messages(self, dirname):
+        import simplejson
+        messages = []
+        files = os.listdir(dirname)
+        files = sorted(files)
+        for file in files:
+            if file.endswith('.msg-from-js'):
+                fname = os.path.join(dirname, file)
+                with open(fname, 'r') as f:
+                    msg = simplejson.load(f)
+                messages.append(msg)
+                os.remove(fname)
+                break  # only one at a time for now
+        return messages
+
+    
+    def _initial_update(self):
+        self._component._initial_update()
+        for ch in self._children.values():
+            ch._initial_update()
     
     def add_serialized_children(self, children):
         for i, child in enumerate(children):
@@ -189,7 +202,6 @@ class {{ widget.type }}:
             self._handle_javascript_state_changed(msg['state'])
         elif msg['name'] == 'quit':
             self._quit = True
-            self._flush_all()
         else:
             print(msg)
             raise Exception('Unexpectected message in _handle_message_process_mode')
@@ -365,3 +377,7 @@ def _json_serialize(x):
         return ret
     else:
         return x
+
+def write_text_file(fname, txt):
+    with open(fname, 'w') as f:
+        f.write(txt)
