@@ -36,7 +36,7 @@ class IncomingConnection {
             }
         }
         if (msg.message_type == 'start_python_process') {
-            this._startPythonProcess(msg.componentModule, msg.componentName, msg.processId);
+            this._startPythonProcess(msg.projectName, msg.type, msg.initialChildren, msg.props, msg.processId);
         }
         else if (msg.message_type == 'to_python_process') {
             if (msg.processId in this._python_processes) {
@@ -59,8 +59,8 @@ class IncomingConnection {
             console.error(`Unexpected message type ${msg.message_type}`);
         }
     }
-    _startPythonProcess(componentModule, componentName, processId) {
-        let X = new ReactopyaPythonProcess(componentModule, componentName, (msg) => {
+    _startPythonProcess(projectName, type, initialChildren, props, processId) {
+        let X = new ReactopyaPythonProcess(projectName, type, initialChildren, props, (msg) => {
             this._sendMessage({message_type: "from_python_process", processId: processId, message: msg});
         });
         X.start();

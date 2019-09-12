@@ -1,26 +1,30 @@
-import PythonProcess from './PythonProcess';
+// import PythonProcess from './PythonProcess';
 const stable_stringify = require('json-stable-stringify');
 
 export default class PythonInterface {
     constructor(reactComponent, config) {
         this._reactComponent = reactComponent;
-        this._pythonModuleName = config.pythonModuleName || '{{ project_name }}_widgets';
         this._projectName = config.project_name;
         this._type = config.type;
         this._syncPythonStateToStateKeys = config.pythonStateKeys;
         this._syncStateToJavaScriptStateKeys = config.javaScriptStateKeys;
-        this._pythonProcess = null;
+        // this._pythonProcess = null;
         this._pythonState = {};
         this._javaScriptState = {};
         this._pendingJavaScriptState = {};
-        this._javaScriptPythonStateModel = reactComponent.javaScriptPythonStateModel || reactComponent.props.javaScriptPythonStateModel;
-        if ((!this._javaScriptPythonStateModel) && (reactComponent.props.reactopyaParent)) {
+        this._reactopyaModel = reactComponent.reactopyaModel || reactComponent.props.reactopyaModel;
+        if ((!this._reactopyaModel) && (reactComponent.props.reactopyaParent)) {
             let parent = reactComponent.props.reactopyaParent;
-            let parentModel = parent.javaScriptPythonStateModel || parent.props.javaScriptPythonStateModel;
+            let parentModel = parent.reactopyaModel || parent.props.reactopyaModel;
             let childId = reactComponent.props.reactopyaChildId;
-            let model = parentModel.addDynamicChild(childId, this._projectName, this._type);
-            reactComponent.javaScriptPythonStateModel = model; // i don't think we can set the props here
-            this._javaScriptPythonStateModel = model;
+            if (childId) {
+                let model = parentModel.addChild(childId, this._projectName, this._type);
+                reactComponent.reactopyaModel = model; // i don't think we can set the props here
+                this._reactopyaModel = model;    
+            }
+            else {
+                console.error('Missing prop: childId');
+            }
         }
     }
     start() {
@@ -28,22 +32,23 @@ export default class PythonInterface {
             // this is for snapshots (static html exports)
             this._reactComponent.setState(this._reactComponent.props.reactopya_init_state);
         }
-        if (this._javaScriptPythonStateModel) {
-            this._javaScriptPythonStateModel.onPythonStateChanged((state) => {
+        if (this._reactopyaModel) {
+            this._reactopyaModel.onPythonStateChanged((state) => {
                 this._reactComponent.setState(state);
             });
+            this._reactopyaModel.start();
         }
         else {
-            if ((!window.reactopya) || (!window.reactopya.disable_python_backend)) {
-                if (!this._pythonProcess) {
-                    this._pythonProcess = new PythonProcess(this._pythonModuleName, this._type);
-                    this._pythonProcess.onReceiveMessage(this._handleReceiveMessageFromProcess);
-                    this._pythonProcess.start();
-                }
-            }
-            else {
+            if ((window.reactopya) && (window.reactopya.disable_python_backend)) {
                 console.info('Python backend disabled');
             }
+            // else {
+            //     if (!this._pythonProcess) {
+            //         this._pythonProcess = new PythonProcess(this._pythonModuleName, this._type);
+            //         this._pythonProcess.onReceiveMessage(this._handleReceiveMessageFromProcess);
+            //         this._pythonProcess.start();
+            //     }
+            // }
             window.addEventListener('beforeunload', () => {
                 this.stop();
                 window.removeEventListener('beforeunload', this._cleanup); // remove the event handler for normal unmounting
@@ -56,18 +61,20 @@ export default class PythonInterface {
         this.update();
     }
     stop() {
-        this._cleanup();
+        if (this._reactopyaModel) {
+            this._reactopyaModel.stop();
+        }
     }
     update() {
         this._copyStateToJavaScriptState();
     }
     setJavaScriptState(state) {
-        if ((!this._javaScriptPythonStateModel) && (!this._pythonProcess)) {
-            for (let key in state) {
-                this._pendingJavaScriptState[key] = state[key];
-            }
-            return;
-        }
+        // if ((!this._reactopyaModel) && (!this._pythonProcess)) {
+        //     for (let key in state) {
+        //         this._pendingJavaScriptState[key] = state[key];
+        //     }
+        //     return;
+        // }
         let newJavaScriptState = {};
         for (let key in state) {
             if (!compare(state[key], this._javaScriptState[key])) {
@@ -76,17 +83,17 @@ export default class PythonInterface {
             }
         }
         if (Object.keys(newJavaScriptState).length > 0) {
-            if (this._javaScriptPythonStateModel) {
-                this._javaScriptPythonStateModel.setJavaScriptState(newJavaScriptState);
+            if (this._reactopyaModel) {
+                this._reactopyaModel.setJavaScriptState(newJavaScriptState);
             }
-            else if (this._pythonProcess) {
-                this._pythonProcess.sendMessage({
-                    name: 'setJavaScriptState',
-                    state: newJavaScriptState
-                });
-            }
+            // else if (this._pythonProcess) {
+            //     this._pythonProcess.sendMessage({
+            //         name: 'setJavaScriptState',
+            //         state: newJavaScriptState
+            //     });
+            // }
             else {
-                console.error('Problem in setJavaScriptState: unable to find one of: this.javaScriptPythonStateModel, props.javaScriptPythonStateModel, _pythonProcess');
+                console.error('Problem in setJavaScriptState: unable to find one of: this.reactopyaModel, props.reactopyaModel');
             }
         }
     }
@@ -104,29 +111,20 @@ export default class PythonInterface {
         else return undefined;
     }
 
-    _cleanup() {
-        if (!this._javaScriptPythonStateModel) {
-            if (this._pythonProcess) {
-                this._pythonProcess.stop();
-                this._pythonProcess = null;
-            }
-        }
-    }
-
-    _handleReceiveMessageFromProcess = (msg) => {
-        if (msg.name == 'setPythonState') {
-            let somethingChanged = false;
-            for (let key in msg.state) {
-                if (!compare(msg.state[key], this._pythonState[key])) {
-                    this._pythonState[key] = clone(msg.state[key]);
-                    somethingChanged = true;
-                }
-            }
-            if (somethingChanged) {
-                this._copyPythonStateToState(this._syncPythonStateToStateKeys);
-            }
-        }
-    }
+    // _handleReceiveMessageFromProcess = (msg) => {
+    //     if (msg.name == 'setPythonState') {
+    //         let somethingChanged = false;
+    //         for (let key in msg.state) {
+    //             if (!compare(msg.state[key], this._pythonState[key])) {
+    //                 this._pythonState[key] = clone(msg.state[key]);
+    //                 somethingChanged = true;
+    //             }
+    //         }
+    //         if (somethingChanged) {
+    //             this._copyPythonStateToState(this._syncPythonStateToStateKeys);
+    //         }
+    //     }
+    // }
 
     _copyPythonStateToState(keys) {
         let newState = {};

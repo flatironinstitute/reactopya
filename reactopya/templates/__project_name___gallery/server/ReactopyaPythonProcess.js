@@ -3,7 +3,7 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const tmp = require('tmp');
 
-function ReactopyaPythonProcess(componentModule, componentName, onReceiveMessage) {
+function ReactopyaPythonProcess(projectName, type, initialChildren, props, onReceiveMessage) {
     let that = this;
     let m_tmpDir = null;
     let m_buf = '';
@@ -11,9 +11,9 @@ function ReactopyaPythonProcess(componentModule, componentName, onReceiveMessage
 
     this.start = function() {
         let pythonCode = '';
-        pythonCode = pythonCode + `from ${componentModule} import ${componentName} as Component` + '\n\n'
+        pythonCode = pythonCode + `from ${projectName} import ${type}` + '\n\n'
         pythonCode = pythonCode + `if __name__ == '__main__':` + '\n'
-        pythonCode = pythonCode + `  A = Component()` + '\n'
+        pythonCode = pythonCode + `  A = ${type}()` + '\n'
         pythonCode = pythonCode + `  A.run_process_mode()` + '\n'
 
         m_tmpDir = tmp.dirSync({ template: 'tmp-reactopya-XXXXXX'});;
@@ -31,8 +31,18 @@ function ReactopyaPythonProcess(componentModule, componentName, onReceiveMessage
                 if (ind >= 0) {
                     let txt = m_buf.slice(0, ind);
                     m_buf = m_buf.slice(ind + 1);
-                    let msg = JSON.parse(txt);
-                    onReceiveMessage && onReceiveMessage(msg);
+                    let msg;
+                    try {
+                        msg = JSON.parse(txt);
+                    }
+                    catch(err) {
+                        console.error('Error parsing message ---SERVER--');
+                        console.error(txt);
+                        msg = null;
+                    }
+                    if (msg) {
+                        onReceiveMessage && onReceiveMessage(msg);
+                    }
                 }
                 else {
                     break;

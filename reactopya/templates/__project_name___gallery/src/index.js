@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom";
-import MainWindow, { IndividualWidget } from "./components/MainWindow";
+import MainWindow from "./components/MainWindow";
 const config = require('../reactopya.config.json');
 
 const ReactopyaClient = require('./ReactopyaClient');
@@ -26,20 +26,11 @@ const main = () => {
 
     setTimeout(function() {
         let url_params = parse_url_params();
-        if (url_params.widget) {
-            ReactDOM.render((
-                <IndividualWidget widgetName={url_params.widget} config={config} />
-            ),
-                document.getElementById("root")
-            );
-        }
-        else {
-            ReactDOM.render((
-                <MainWindow config={config} />
-            ),
-                document.getElementById("root")
-            );
-        }
+        ReactDOM.render((
+            <MainWindow config={config} />
+        ),
+            document.getElementById("root")
+        );
     }, 100);
 }
 

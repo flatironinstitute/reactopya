@@ -14,7 +14,6 @@ class Component:
         self._javascript_state = dict()
         self._quit = False
         self._running_process = False
-        self._jupyter_mode = False
 
     @abstractmethod
     def javascript_state_changed(self, prev_state, new_state):
@@ -28,39 +27,8 @@ class Component:
         if changed_state:
             for key in changed_state:
                 self._python_state[key] = changed_state[key]
-            if self._running_process:
-                msg = {"name": "setPythonState", "state": changed_state}
-                self._send_message(msg)
             for handler in self._python_state_changed_handlers:
                 handler(changed_state)
-    
-    def run_process_mode(self):
-        self._running_process = True
-        self.original_stdout = sys.stdout
-        sys.stdout = sys.stderr
-        iterate_timeout = 1
-        self._initial_update()
-        while True:
-            self._flush_all()
-            stdin_available = select.select([sys.stdin], [], [], iterate_timeout)[0]
-            if stdin_available:
-                line = sys.stdin.readline()
-                try:
-                    msg = json.loads(line)
-                except:
-                    print(line)
-                    raise Exception('Error parsing message.')
-                self._handle_message(msg)
-            else:
-                 self.iterate()
-            self._flush_all()
-            if self._quit:
-                break
-            time.sleep(0.01)
-
-    def init_jupyter(self, **kwargs):
-        self._jupyter_mode = True
-        self._initial_update()
     
     def get_javascript_state(self, key):
         return deepcopy(self._javascript_state.get(key))
@@ -77,17 +45,6 @@ class Component:
     def _initial_update(self):
         self.javascript_state_changed(deepcopy(self._javascript_state), deepcopy(self._javascript_state))
 
-    # internal function to handle incoming message (coming from javascript component)
-    def _handle_message(self, msg):
-        if msg['name'] == 'setJavaScriptState':
-            self._handle_javascript_state_changed(msg['state'])
-        elif msg['name'] == 'quit':
-            self._quit = True
-            self._flush_all()
-        else:
-            print(msg)
-            raise Exception('Unexpectected message')
-
     def _handle_javascript_state_changed(self, state):
         changed_state = dict()
         for key in state:
@@ -98,16 +55,6 @@ class Component:
             for key in changed_state:
                 self._javascript_state[key] = changed_state[key]
             self.javascript_state_changed(prev_javascript_state, deepcopy(self._javascript_state))
-
-    # internal function to send message to javascript component
-    def _send_message(self, msg):
-        print(simplejson.dumps(msg, ignore_nan=True), file=self.original_stdout)
-        self._flush_all()
-
-    def _flush_all(self):
-        self.original_stdout.flush()
-        sys.stdout.flush()
-        sys.stderr.flush()
 
 
 def _different(a, b):

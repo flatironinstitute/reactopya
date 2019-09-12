@@ -66,17 +66,18 @@ class ChildWrapper extends Component {
     }
 }
  
-function _create_element(type, children, props, key) {
+function _create_element(type, children, props, key, reactopyaModel) {
     children = children || [];
     props = props || {};
     key = key || undefined;
     let Comp = widgetsByType[type];
     return (
-        <Comp {...props}>
+        <Comp {...props} reactopyaModel={reactopyaModel}>
             {
-                children.map((child) => {
+                children.map((child, i) => {
+                    const childReactopyaModel = reactopyaModel.childModel(i);
                     if (child.project_name === '{{ project_name }}') {
-                        return _create_element(child.type, child.children, child.props, child.key)
+                        return _create_element(child.type, child.children, child.props, child.key, childReactopyaModel)
                     }
                     else {
                         // Not in the same project! built against a different React object!
@@ -84,6 +85,7 @@ function _create_element(type, children, props, key) {
                         // (This is bound to cause problems at some point -- Maybe some smart folks will help out)
                         return <ChildWrapper
                             reactopya_child={child}
+                            reactopyaModel={childReactopyaModel}
                         />
                     }
                 })
@@ -94,8 +96,8 @@ function _create_element(type, children, props, key) {
 
 {% for widget in widgets %}
 window.reactopya.widgets.{{ project_name }}['{{ widget.type }}'] = {
-    render: function(div, children, props, key) {
-        let X = _create_element('{{ widget.type }}', children, props, key);
+    render: function(div, children, props, key, reactopyaModel) {
+        let X = _create_element('{{ widget.type }}', children, props, key, reactopyaModel);
         ReactDOM.render(X, div);
     }
 }

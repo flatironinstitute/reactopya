@@ -2,6 +2,8 @@ import React, { Component } from 'react';
 import * as allWidgets from '../../{{ project_name }}_widgets';
 import { Paper, Grid, IconButton } from "@material-ui/core";
 import { FaExpandArrowsAlt, FaCompressArrowsAlt } from "react-icons/fa";
+import ReactopyaModel from './ReactopyaModel';
+import PythonProcess from './PythonProcess';
 
 class LazyLoader extends Component {
     constructor(props) {
@@ -62,28 +64,14 @@ class LazyLoader extends Component {
     }
 }
 
-export class IndividualWidget extends Component {
+export default class MainWindow extends Component {
     constructor(props) {
         super(props);
         this.state = {
-
-        }
+            expandedWidget: null,
+            widgets: []
+        };
     }
-    render() {        
-        const { config, widgetName } = this.props;
-        const Comp = allWidgets[widgetName];
-        if (!Comp) {
-            return <div>Widget not found: {widgetName}</div>;
-        }
-        let props = (Comp.reactopyaConfig || {}).galleryProps || {};
-        return <Comp {...props} />;
-    }
-}
-
-export default class MainWindow extends Component {
-    state = {
-        expandedWidget: null
-    };
     handleToggleExpand = (widget) => {
         if (this.state.expandedWidget) {
             this.setState({
@@ -96,32 +84,49 @@ export default class MainWindow extends Component {
             });
         }
     }
-    render() {
+    componentDidMount() {
         const { config } = this.props;
+        let widgets = [];
+        let gallery_widgets = config.gallery_widgets;
+        if (!gallery_widgets) {
+            gallery_widgets = [];
+            for (let key in allWidgets) {
+                gallery_widgets.push({
+                    name: key
+                });
+            }
+        }
+        for (let a of gallery_widgets) {
+            widgets.push({
+                project_name: a.project_name || allWidgets[a.type].reactopyaConfig.project_name,
+                type: a.type,
+                title: a.title || allWidgets[a.type].title || a.type,
+                children: a.children || [],
+                props: a.props || (allWidgets[a.type].reactopyaConfig || {}).defaultProps || {}
+            });
+        }
+        for (let widget of widgets) {
+            let model = new ReactopyaModel(widget.project_name, widget.type);
+            model.addChildModelsFromSerializedChildren(widget.children || []);
+            let pythonProcess = new PythonProcess(widget.project_name, widget.type, widget.children || [], widget.props || {}, widget.key || '', model);
+            widget.pythonProcess = pythonProcess;
+            widget.reactopyaModel = model;
+        }
+        this.setState({
+            widgets: widgets
+        });
+    }
+    render() {
         const { expandedWidget } = this.state;
         const style0 = { overflowX: 'hidden', margin: 10, padding: 20, background: 'lightblue' };
         const style1 = { padding: 20, margin: 10, minHeight: 800, maxHeight: 800, overflowY: 'auto' };
-        let widgets = [];
+        let widgetsToShow = [];
         if (expandedWidget) {
-            widgets.push(expandedWidget);
+            widgetsToShow.push(expandedWidget);
         }
         else {
-            let gallery_widgets = config.gallery_widgets;
-            if (!gallery_widgets) {
-                gallery_widgets = [];
-                for (let key in allWidgets) {
-                    gallery_widgets.push({
-                        name: key
-                    });
-                }
-            }
-            for (let a of config.gallery_widgets) {
-                widgets.push({
-                    type: a.type,
-                    title: a.title || allWidgets[a.type].title || a.type,
-                    children: a.children || [],
-                    props: a.props || (allWidgets[a.type].reactopyaConfig || {}).galleryProps || {}
-                });
+            for (let w of this.state.widgets) {
+                widgetsToShow.push(w);
             }
         }
         let item_sizes = {
@@ -141,8 +146,8 @@ export default class MainWindow extends Component {
             <div style={style0}>
                 <Grid container style={style0}>
                     {
-                        widgets.map((widget, ii) => {
-                            let element = _create_element(widget.type, widget.children, widget.props);
+                        widgetsToShow.map((widget, ii) => {
+                            let element = _create_element(widget.project_name || '{{ project_name }}', widget.type, widget.children || [], widget.props, widget.key || '', widget.reactopyaModel);
                             return <Grid key={widget.title} item {...item_sizes} key={ii}>
                                 <Paper style={style1}>
                                     <Grid container alignItems={'flex-start'} justify={'flex-end'} direction={'row'}>
@@ -170,13 +175,14 @@ export default class MainWindow extends Component {
     }
 }
 
-function _create_element(type, children, props, key) {
+function _create_element(project_name, type, children, props, key, reactopyaModel) {
+    console.log('_create_element', project_name, type, children, props, key, reactopyaModel);
     let Comp = allWidgets[type];
     return (
-        <Comp {...(props)} key={key || undefined}>
+        <Comp {...(props)} key={key || undefined} reactopyaModel={reactopyaModel}>
             {
                 children.map((child, ii) => (
-                    _create_element(child.type, child.children || [], child.props || {}, ii)
+                    _create_element(child.project_name || project_name, child.type, child.children || [], child.props || {}, ii, reactopyaModel.childModel(ii))
                 ))
             }
         </Comp>

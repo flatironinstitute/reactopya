@@ -1,4 +1,4 @@
-from .reactopyawidget import ReactopyaWidget
+from .reactopyajupyterwidget import ReactopyaJupyterWidget
 from ._version import __version__
 
 def _jupyter_nbextension_paths():

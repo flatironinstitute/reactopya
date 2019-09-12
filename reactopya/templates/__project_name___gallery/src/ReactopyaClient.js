@@ -59,13 +59,15 @@ class ReactopyaClient {
         }
         this._ws.send(JSON.stringify(message));
     }
-    startPythonProcess(componentModule, componentName, onReceiveMessage) {
+    startPythonProcess(projectName, type, initialChildren, props, onReceiveMessage) {
         let id = this._last_python_process_id + 1;
         this._last_python_process_id = id;
         this._sendMessage({
             message_type: 'start_python_process',
-            componentModule: componentModule,
-            componentName: componentName,
+            projectName: projectName,
+            type: type,
+            initialChildren: initialChildren,
+            props: props,
             processId: id
         });
         let PP = new _RemotePythonProcess(this, id, onReceiveMessage);

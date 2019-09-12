@@ -97,7 +97,6 @@ def main():
     parser.add_argument(
         'command', help='One of the following:\n\n{}\n'.format(command_description))
     parser.add_argument('--verbose', action='store_true', help='Turn on verbose output')
-    parser.add_argument('--widget', default='', help='Name of individual widget to display', required=False)
 
     args = parser.parse_args()
     command = args.command
@@ -174,9 +173,10 @@ def _install_gallery_dev(config, args):
         #!/bin/bash
         set -ex
         cd generated/{project_name}_gallery
-        pip install -e .
         yarn install
         yarn install-electron
+        cd ../{project_name}
+        pip install -e .
     '''.format(project_name=config['project_name'])
     shell_cmd = ShellScript(cmd)
     shell_cmd.start()
@@ -203,9 +203,8 @@ def _start_gallery_dev(config, args):
             #!/bin/bash
             set -ex
             cd generated/{project_name}_gallery
-            export widget="{widget}"
             yarn electron-dev
-        '''.format(project_name=config['project_name'], widget=args.widget)
+        '''.format(project_name=config['project_name'])
         shell_cmd = ShellScript(cmd)
         shell_cmd.start()
         retcode = shell_cmd.wait()

@@ -3,76 +3,54 @@
 // Do not edit manually
 ////////////////////////////////////////////////////////////////////
 
+var ReactopyaModel = require('./ReactopyaModel.js');
 var widgets = require('@jupyter-widgets/base');
 var _ = require('lodash');
 const version = require('../package.json').version;
 
-class ReactopyaWidgetModel extends widgets.DOMWidgetModel {
+class ReactopyaJupyterWidgetModel extends widgets.DOMWidgetModel {
     initialize(attributes, options) {
         super.initialize(attributes, options);
         let that = this;
         
         this.listenTo(this, 'msg:custom', _.bind(this.handleMessage, this));
-        this.javaScriptPythonStateModel = new JavaScriptPythonStateModel();
-        this.javaScriptPythonStateModel.onJavaScriptStateChanged(function(state) {
+        this.reactopyaModel = null;
+    }
+    _initialize() {
+        let that = this;
+        const project_name = this.get('_project_name');
+        const type = this.get('_type');
+        const initialChildren = this.get('_initial_children');
+        
+        this.reactopyaModel = new ReactopyaModel(project_name, type);
+        this.reactopyaModel.addChildModelsFromSerializedChildren(initialChildren);
+     
+        // important to do this before adding the handler below (don't want to send these messages)
+        this.reactopyaModel.onJavaScriptStateChanged(function(state) {
             that.send({
                 name: 'setJavaScriptState',
-                child_indices: [],
                 state: state
             });
         });
-        this.javaScriptPythonStateModel.onAddDynamicChild(function(childId, projectName, type) {
+
+        // important that this comes after we have added the initial children to the model
+        this.reactopyaModel.onAddChild(function(childId, projectName, type) {
             that.send({
-                name: 'addDynamicChild',
+                name: 'addChild',
                 child_id: childId,
                 project_name: projectName,
                 type: type
             });
         });
-        this.on('change:_children', function() {
-            that.initialize_children();
-        });
-    }
-    initialize_children() {
-        this.children = JSON.parse(JSON.stringify((this.get('_children') || {}).children || []));
-        this.add_jsp_models_to_children(this.children, []);
-    }
-    add_jsp_models_to_children(children, child_indices) {
-        let that = this;
-        for (let i in children) {
-            (function(ich) {
-                let ch = children[ich];
-                let child_indices2 = JSON.parse(JSON.stringify(child_indices));
-                child_indices2.push(+ich);
-                ch.props = ch.props || {};
-                ch.props.javaScriptPythonStateModel = new JavaScriptPythonStateModel();
-                ch.props.javaScriptPythonStateModel.onJavaScriptStateChanged(function(state) {
-                    that.send({
-                        name: 'setJavaScriptState',
-                        child_indices: child_indices2,
-                        state: state
-                    });
-                })
-                that.add_jsp_models_to_children(ch.children || [], child_indices2);
-            })(i);
-        }
     }
     handleMessage(content) {
         const name = content.name;
+        if (name == 'initialize') {
+            this._initialize();
+        }
         if (name == 'setPythonState') {
             let state = content.state;
-            let child_indices = content.child_indices || [];
-            if (child_indices.length === 0) {
-                this.javaScriptPythonStateModel.setPythonState(state);    
-            }
-            else {
-                let ptr = this;
-                for (let ind of child_indices) {
-                    ptr = ptr.children[ind];
-                }
-                let model0 = ptr.javaScriptPythonStateModel || ptr.props.javaScriptPythonStateModel;
-                model0.setPythonState(state);
-            }
+            this.reactopyaModel.setPythonState(state);
         }
         else {
             console.error(`Unregognized message in Model: ${name}`);
@@ -80,8 +58,8 @@ class ReactopyaWidgetModel extends widgets.DOMWidgetModel {
     }
     defaults() {
         return _.extend(widgets.DOMWidgetModel.prototype.defaults(), {
-            _model_name : 'ReactopyaWidgetModel',
-            _view_name : 'ReactopyaWidgetView',
+            _model_name : 'ReactopyaJupyterWidgetModel',
+            _view_name : 'ReactopyaJupyterWidgetView',
             _model_module : 'reactopya_jup',
             _view_module : 'reactopya_jup',
             _model_module_version : version,
@@ -90,13 +68,14 @@ class ReactopyaWidgetModel extends widgets.DOMWidgetModel {
             _project_name: 'unknown',
             _type: 'unknown',
             _props: {},
-            _children: {}
+            _key: '',
+            _initial_children: {}
         });
     }
 }
 
 // Custom View. Renders the widget model.
-class ReactopyaWidgetView extends widgets.DOMWidgetView {
+class ReactopyaJupyterWidgetView extends widgets.DOMWidgetView {
     initialize(parameters) {
         super.initialize(parameters);
     }
@@ -109,80 +88,11 @@ class ReactopyaWidgetView extends widgets.DOMWidgetView {
         let props = this.model.get('_props');
         let key = this.model.get('_key')
         
-        props.javaScriptPythonStateModel = this.model.javaScriptPythonStateModel;
-        
-        window.reactopya.widgets[project_name][type].render(this.div, this.model.children, props, key || undefined);
-    }
-}
-
-class JavaScriptPythonStateModel {
-    constructor() {
-        this._pythonStateStringified = {};
-        this._javaScriptStateStringified = {};
-        this._pythonStateChangedHandlers = [];
-        this._javaScriptStateChangedHandlers = [];
-        this._addDynamicChildHandlers = [];
-        this._dynamicChildModels = {};
-    }
-    setPythonState(state) {
-        if (state._dynamicChildId) {
-            this._dynamicChildModels[state._dynamicChildId].setPythonState(state.state);
-            return;
-        }
-        this._setStateHelper(state, this._pythonStateStringified, this._pythonStateChangedHandlers);
-    }
-    setJavaScriptState(state) {
-        this._setStateHelper(state, this._javaScriptStateStringified, this._javaScriptStateChangedHandlers);
-    }
-    addDynamicChild(childId, projectName, type) {
-        if (childId in this._dynamicChildModels) {
-            return this._dynamicChildModels[childId];
-        }
-        let model = new JavaScriptPythonStateModel();
-        model.onJavaScriptStateChanged((state) => {
-            for (let handler of this._javaScriptStateChangedHandlers) {
-                handler({
-                    _dynamicChildId: childId,
-                    state: state
-                });
-            }
-        });
-        this._dynamicChildModels[childId] = model;
-        for (let handler of this._addDynamicChildHandlers) {
-            handler(childId, projectName, type);
-        }
-        return model;
-    }
-    onPythonStateChanged(handler) {
-        this._pythonStateChangedHandlers.push(handler);
-    }
-    onJavaScriptStateChanged(handler) {
-        this._javaScriptStateChangedHandlers.push(handler);
-    }
-    onAddDynamicChild(handler) {
-        this._addDynamicChildHandlers.push(handler);
-    }
-    _setStateHelper(state, existingStateStringified, handlers) {
-        let changedState = {};
-        let somethingChanged = false;
-        for (let key in state) {
-            let val = state[key];
-            let valstr = JSON.stringify(val);
-            if (valstr !== existingStateStringified[key]) {
-                existingStateStringified[key] = val;
-                changedState[key] = JSON.parse(valstr);
-                somethingChanged = true;
-            }
-        }
-        if (somethingChanged) {
-            for (let handler of handlers) {
-                handler(changedState);
-            }
-        }
+        window.reactopya.widgets[project_name][type].render(this.div, this.model._initial_children, props, key || undefined, this.model.reactopyaModel);
     }
 }
 
 module.exports = {
-    ReactopyaWidgetModel: ReactopyaWidgetModel,
-    ReactopyaWidgetView: ReactopyaWidgetView
+    ReactopyaJupyterWidgetModel: ReactopyaJupyterWidgetModel,
+    ReactopyaJupyterWidgetView: ReactopyaJupyterWidgetView
 };

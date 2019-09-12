@@ -4,68 +4,74 @@ from ._version import __version__ as version
 import numpy as np
 
 @widgets.register
-class ReactopyaWidget(widgets.DOMWidget):
+class ReactopyaJupyterWidget(widgets.DOMWidget):
     """Reactopya Jupyter widget"""
-    _view_name = Unicode('ReactopyaWidgetView').tag(sync=True)
-    _model_name = Unicode('ReactopyaWidgetModel').tag(sync=True)
+    _view_name = Unicode('ReactopyaJupyterWidgetView').tag(sync=True)
+    _model_name = Unicode('ReactopyaJupyterWidgetModel').tag(sync=True)
     _view_module = Unicode('reactopya_jup').tag(sync=True)
     _model_module = Unicode('reactopya_jup').tag(sync=True)
     _view_module_version = Unicode('^{}'.format(version)).tag(sync=True)
     _model_module_version = Unicode('^{}'.format(version)).tag(sync=True)
 
-    # props
+    # traitlets
     _project_name = Unicode('').tag(sync=True)
     _type = Unicode('').tag(sync=True)
-    _children = Dict([]).tag(sync=True)
+    _initial_children = Dict([]).tag(sync=True)
     _props = Dict({}).tag(sync=True)
     _key = Unicode('').tag(sync=True)
     _reactopya_jup_version = Unicode('').tag(sync=True)
 
-    def __init__(self, *, project_name, type, children, props, key=''):
+    def __init__(self, *, project_name, type, initial_children, props, key=''):
         super().__init__()
+        # use ._m_ here so we don't get confused with the traitlets!
         self._m_project_name = project_name
         self._m_type = type
-        self._m_children = children
+        self._m_children = dict()
+        for i, ch in enumerate(initial_children):
+            self._m_children[i] = ch
         self._m_props = props
         self._m_key = key
         self._javascript_state_changed_handlers = []
-        self._add_dynamic_child_handlers = []
+        self._add_child_handlers = []
         self.observe(self._on_change)
         self.set_trait('_project_name', project_name)
         self.set_trait('_type', type)
         self.set_trait('_props', _json_serialize(props))
-        self.set_trait('_children', _json_serialize(dict(children=children)))
+        self.set_trait('_initial_children', _json_serialize(dict(children=initial_children)))
         self.set_trait('_key', key)
         self.on_msg(self._handle_message)
 
     def show(self):
+        # does sending this message belong here?
+        self.send(dict(
+            name='initialize'
+        ))
+
         display(self)
     
-    def set_python_state(self, state, child_indices=[]):
+    def set_python_state(self, state):
         self.send(dict(
             name='setPythonState',
-            child_indices=child_indices,
             state=_json_serialize(state)
         ))
     
     def on_javascript_state_changed(self, handler):
         self._javascript_state_changed_handlers.append(handler)
     
-    def on_add_dynamic_child(self, handler):
-        self._add_dynamic_child_handlers.append(handler)
+    def on_add_child(self, handler):
+        self._add_child_handlers.append(handler)
     
     def _handle_message(self, _, content, buffers):
         name = content.get('name', '')
         if name == 'setJavaScriptState':
             state = content['state']
-            child_indices = content.get('child_indices', [])
             for handler in self._javascript_state_changed_handlers:
-                handler(state, child_indices)
-        elif name == 'addDynamicChild':
+                handler(state)
+        elif name == 'addChild':
+            child_id = content.get('child_id')
             project_name = content.get('project_name')
             type = content.get('type')
-            child_id = content.get('child_id')
-            for handler in self._add_dynamic_child_handlers:
+            for handler in self._add_child_handlers:
                 handler(child_id, project_name, type)
         else:
             raise Exception('Unexpected message name: {}'.format(name))

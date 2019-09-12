@@ -10,6 +10,8 @@ from .reactopyaelectronwidget import ReactopyaElectronWidget
 from .init import _get_init_info
 import importlib
 import logging
+import sys
+import time
 # logging.basicConfig(filename='/tmp/reactopya_debug', level=logging.INFO)
 logging.basicConfig(filename='/tmp/reactopya_debug', level=logging.CRITICAL)
 
@@ -24,66 +26,80 @@ class {{ widget.type }}:
     def __init__(self, *args, **kwargs):
         super().__init__()
         self._props = dict(**kwargs)
-        self._children = list(args)
+        self._children = {}
+        self._child_ids = []
+        for i, ch in enumerate(list(args)):
+            self._children[i] = ch
+            self._child_ids.append(str(i))
         self._component = {{ widget.type }}Orig()
         self._component.on_python_state_changed(
-            lambda state: self._handle_python_state_changed(state, []))
-        self._connect_children(self._children, [])
+            lambda state: self._handle_python_state_changed(state))
+        self._connect_children(self._children)
         self._reactopya_widget = None
         self._javascript_state = dict()  # for snapshot
         self._python_state = dict()  # for snapshot
-        self._component.init_jupyter()
-        self._dynamic_children = dict()
+        self._running_process = False  # for run_process_mode
+        self._component._initial_update()
 
-    def _connect_children(self, children, child_indices):
-        for i, ch in enumerate(children):
-            self._connect_child(ch, child_indices + [i])
-            self._connect_children(ch._children, child_indices + [i])
+    def _connect_children(self, children):
+        for child_id, ch in children.items():
+            self._connect_child(str(child_id), ch)
 
-    def _connect_child(self, child, child_indices):
+    def _connect_child(self, child_id, child):
+        child_id = str(child_id)
         child._component.on_python_state_changed(
-            lambda state: self._handle_python_state_changed(state, child_indices))
+            lambda state: self._handle_python_state_changed(dict(_childId=child_id, state=state)))
 
-    def _handle_python_state_changed(self, state, child_indices):
+    def _handle_python_state_changed(self, state):
         logging.info('--- handle_python_state_changed {{ widget.type }} {}'.format(state))
-        ptr = self
-        for ind in child_indices:
-            ptr = ptr._children[ind]
         for key, val in state.items():
-            ptr._python_state[key] = val  # for snapshot
-        if self._reactopya_widget:
-            self._reactopya_widget.set_python_state(state, child_indices)
-
-    def _handle_javascript_state_changed(self, state, child_indices):
-        logging.info('--- handle_javascript_state_changed {{ widget.type }} {}'.format(state))
-        ptr = self
-        for ind in child_indices:
-            ptr = ptr._children[ind]
-        for key, val in state.items():
-            ptr._javascript_state[key] = val  # for snapshot
-        if '_dynamicChildId' in state:
-            child_id = state['_dynamicChildId']
-            ptr._dynamic_children[child_id]._handle_javascript_state_changed(state['state'], [])
-            return
-        ptr._component._handle_javascript_state_changed(state)
+            self._python_state[key] = val  # for snapshot
+        # if self._reactopya_widget:
+        #     self._reactopya_widget.set_python_state(state)
+        if self._running_process:
+            msg = {"name": "setPythonState", "state": state}
+            self._send_message_to_running_process(msg)
     
-    def _handle_add_dynamic_child(self, child_id, project_name, type):
-        logging.info('--- handle_add_dynamic_child {{ widget.type }} {} {} {}'.format(child_id, project_name, type))
+    # internal function to send message to javascript component
+    def _send_message_to_running_process(self, msg):
+        import simplejson
+        print(simplejson.dumps(msg, ignore_nan=True), file=self.original_stdout)
+        self._flush_all()
+
+    def _flush_all(self):
+        self.original_stdout.flush()
+        sys.stdout.flush()
+        sys.stderr.flush()
+
+    def _handle_javascript_state_changed(self, state):
+        logging.info('--- handle_javascript_state_changed {{ widget.type }} {}'.format(state))
+        for key, val in state.items():
+            self._javascript_state[key] = val  # for snapshot
+        if '_childId' in state:
+            child_id = str(state['_childId'])
+            self._children[child_id]._handle_javascript_state_changed(state['state'])
+            return
+        self._component._handle_javascript_state_changed(state)
+    
+    def _handle_add_child(self, child_id, project_name, type):
+        child_id = str(child_id)
+        logging.info('--- handle_add_child {{ widget.type }} {} {} {}'.format(child_id, project_name, type))
         mod = importlib.import_module(project_name)
         WIDGET = getattr(mod, type)
         W = WIDGET()
-        self._dynamic_children[child_id] = W
-        W._component.on_python_state_changed(
-            lambda state: self._handle_python_state_changed(dict(_dynamicChildId=child_id, state=state), []))
+        self._children[child_id] = W
+        self._child_ids.append(child_id)
+        self._connect_child(child_id, W)
+        return W
 
     def _serialize(self, include_javascript_state=False, include_python_state=False, include_bundle_fname=False):
         obj = dict(
             project_name='{{ project_name }}',
             type='{{ widget.type }}',
             children=[
-                ch._serialize(include_javascript_state=include_javascript_state,
+                self._children[child_id]._serialize(include_javascript_state=include_javascript_state,
                               include_python_state=include_python_state, include_bundle_fname=include_bundle_fname)
-                for ch in self._children
+                for child_id in self._child_ids
             ],
             props=_json_serialize(self._props)
         )
@@ -103,7 +119,7 @@ class {{ widget.type }}:
     def show(self):
         init_info = _get_init_info()
         if init_info['mode'] == 'jupyter':
-            from reactopya_jup import ReactopyaWidget as ReactopyaJupyterWidget
+            from reactopya_jup import ReactopyaJupyterWidget
             RW = ReactopyaJupyterWidget
         elif init_info['mode'] == 'colab':
             RW = ReactopyaColabWidget
@@ -113,8 +129,8 @@ class {{ widget.type }}:
             project_name='{{ project_name }}',
             type='{{ widget.type }}',
             children=[
-                ch._serialize()
-                for ch in self._children
+                self._children[child_id]._serialize()
+                for child_id in self._child_ids
             ],
             props=self._props
         )
@@ -126,11 +142,57 @@ class {{ widget.type }}:
             self._reactopya_widget._set_electron_src(init_info['electron_src'])
         self._reactopya_widget.on_javascript_state_changed(
             self._handle_javascript_state_changed)
-        self._reactopya_widget.on_add_dynamic_child(
-            self._handle_add_dynamic_child
+        self._reactopya_widget.on_add_child(
+            self._handle_add_child
         )
 
         self._reactopya_widget.show()
+
+    def run_process_mode(self):
+        import simplejson
+        import select
+        self._running_process = True
+        self._quit = False
+        self.original_stdout = sys.stdout
+        sys.stdout = sys.stderr
+        iterate_timeout = 1
+        self._component.on_python_state_changed(lambda state: self._handle_python_state_changed(state))
+        self._component._initial_update()
+        while True:
+            self._flush_all()
+            stdin_available = select.select([sys.stdin], [], [], iterate_timeout)[0]
+            if stdin_available:
+                line = sys.stdin.readline()
+                try:
+                    msg = simplejson.loads(line)
+                except:
+                    print(line)
+                    raise Exception('Error parsing message.')
+                self._handle_message_process_mode(msg)
+            else:
+                 self._component.iterate()
+            self._flush_all()
+            if self._quit:
+                break
+            time.sleep(0.01)
+    
+    def add_serialized_children(self, children):
+        for i, child in enumerate(children):
+            W = self._handle_add_child(i, child.get('project_name', '{{ project_name }}'), child['type'])
+            child_children = child.get('children', [])
+            if len(child_children) > 0:
+                W.add_serialized_children(child_children)
+    
+    # internal function to handle incoming message (coming from javascript component)
+    def _handle_message_process_mode(self, msg):
+        if msg['name'] == 'setJavaScriptState':
+            self._handle_javascript_state_changed(msg['state'])
+        elif msg['name'] == 'quit':
+            self._quit = True
+            self._flush_all()
+        else:
+            print(msg)
+            raise Exception('Unexpectected message in _handle_message_process_mode')
 
     def export_snapshot(self, output_fname, *, format):
         import simplejson
@@ -204,7 +266,7 @@ class {{ widget.type }}:
         var div = document.createElement('div');
         div.id = 'root';
         document.body.appendChild(div);
-        window.reactopya.widgets[sw.project_name][sw.type].render(div, sw.children, sw.props, sw.key || '');
+        window.reactopya.widgets[sw.project_name][sw.type].render(div, sw.children, sw.props, sw.key || '', null);
 
         function set_init_state_on_props(serialized_widget) {
             let init_state = {};

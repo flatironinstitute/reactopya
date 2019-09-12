@@ -3,17 +3,24 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const tmp = require('tmp');
 
-function ReactopyaPythonProcess(componentModule, componentName, onReceiveMessage) {
+function ReactopyaPythonProcess(projectName, type, initialChildren, props, onReceiveMessage) {
     let that = this;
     let m_tmpDir = null;
     let m_buf = '';
     let m_process = null;
 
     this.start = function() {
+        let initial_children_json_b64 = btoa(JSON.stringify(initialChildren));
         let pythonCode = '';
-        pythonCode = pythonCode + `from ${componentModule} import ${componentName} as Component` + '\n\n'
+        pythonCode = pythonCode + `import json` + '\n'
+        pythonCode = pythonCode + `import base64` + '\n'
+        pythonCode = pythonCode + `from ${projectName} import ${type}` + '\n\n'
         pythonCode = pythonCode + `if __name__ == '__main__':` + '\n'
-        pythonCode = pythonCode + `  A = Component()` + '\n'
+        pythonCode = pythonCode + `  A = ${type}()` + '\n'
+        pythonCode = pythonCode + `  initial_children_json_b64='${initial_children_json_b64}'` + '\n'
+        pythonCode = pythonCode + `  initial_children_json=base64.b64decode(initial_children_json_b64).decode('utf-8')` + '\n'
+        pythonCode = pythonCode + `  initial_children = json.loads(initial_children_json)` + '\n'
+        pythonCode = pythonCode + `  A.add_serialized_children(initial_children)` + '\n'
         pythonCode = pythonCode + `  A.run_process_mode()` + '\n'
 
         m_tmpDir = tmp.dirSync({ template: 'tmp-reactopya-XXXXXX'});;
