@@ -19,7 +19,6 @@ export default class PythonInterface {
             let childId = reactComponent.props.reactopyaChildId;
             if (childId) {
                 let isDynamic = true;
-                console.log(`---- adding child model ${this._type}: id=${childId}. Does it exist?`, parentModel.childModel(childId));
                 let model = parentModel.addChild(childId, this._projectName, this._type, isDynamic);
                 reactComponent.reactopyaModel = model; // i don't think we can set the props here
                 this._reactopyaModel = model;    
