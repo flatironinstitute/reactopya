@@ -3,6 +3,7 @@
 ## Do not edit manually
 ####################################################################
 
+import os
 from .all_widgets import *
 {% for X in additional_jupyter_imports %}
 {{ X }}
@@ -10,3 +11,15 @@ from .all_widgets import *
 
 from ._version import __version__
 from .init import init_jupyter, init_colab, init_electron
+
+import logging
+logger = logging.getLogger('reactopya')
+logfname = os.environ.get('REACTOPYA_LOG', None)
+if logfname:
+    logger.setLevel(logging.DEBUG)
+    fileh = logging.FileHandler(logfname, 'a')
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    fileh.setFormatter(formatter)
+    logger.addHandler(fileh) 
+else:
+    logger.setLevel(logging.ERROR)

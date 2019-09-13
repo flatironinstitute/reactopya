@@ -182,7 +182,7 @@ function _create_element(project_name, type, children, props, key, reactopyaMode
         <Comp {...(props)} key={key || undefined} reactopyaModel={reactopyaModel}>
             {
                 children.map((child, ii) => (
-                    _create_element(child.project_name || project_name, child.type, child.children || [], child.props || {}, ii, reactopyaModel.childModel(ii))
+                    _create_element(child.project_name || project_name, child.type, child.children || [], child.props || {}, ii, reactopyaModel ? reactopyaModel.childModel(ii) : null)
                 ))
             }
         </Comp>

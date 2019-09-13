@@ -11,6 +11,9 @@ from .init import _get_init_info
 import importlib
 import logging
 import time
+import logging
+logger = logging.getLogger('reactopya')
+
 # logging.basicConfig(filename='/tmp/reactopya_debug', level=logging.INFO)
 # logging.basicConfig(filename='/tmp/reactopya_debug', level=logging.CRITICAL)
 
@@ -27,7 +30,7 @@ class {{ widget.type }}:
         self._children = {}
         self._child_ids = []
         for i, ch in enumerate(list(args)):
-            self._children[i] = ch
+            self._children[str(i)] = ch
             self._child_ids.append(str(i))
         self._connect_children(self._children)
         self._component = {{ widget.type }}Orig()
@@ -38,22 +41,29 @@ class {{ widget.type }}:
         self._python_state = dict()  # for snapshot
         self._running_process = False  # for run_process_mode
         self._python_state_changed_handlers = []
+        self._is_dynamic_child=False
         # self._component._initial_update()
+    
+    def _set_dynamic_child(self, val):
+        self._is_dynamic_child = val
 
     def _connect_children(self, children):
         for child_id, ch in children.items():
             self._connect_child(str(child_id), ch)
 
     def _connect_child(self, child_id, child):
+        logger.info('WIDGET:{{ widget.type }}:_connect_child %s', child_id)
         child_id = str(child_id)
         child.on_python_state_changed(
             lambda state: self._handle_python_state_changed(dict(_childId=child_id, state=state)))
 
     def _handle_python_state_changed(self, state):
-        for key, val in state.items():
-            self._python_state[key] = val  # for snapshot
-        # if self._reactopya_widget:
-        #     self._reactopya_widget.set_python_state(state)
+        logger.info('WIDGET:{{ widget.type }}:_handle_python_state_changed')
+        if '_childId' not in state:
+            for key, val in state.items():
+                self._python_state[key] = val  # for snapshot
+        if self._reactopya_widget:
+            self._reactopya_widget.set_python_state(state)
         if self._running_process:
             msg = {"name": "setPythonState", "state": state}
             self._send_message_to_parent_process(msg)
@@ -74,34 +84,49 @@ class {{ widget.type }}:
         os.rename(msg_path + '.tmp', msg_path)
 
     def _handle_javascript_state_changed(self, state):
-        for key, val in state.items():
-            self._javascript_state[key] = val  # for snapshot
+        logger.info('WIDGET:{{ widget.type }}:_handle_javascript_state_changed: %s', state)
         if '_childId' in state:
             child_id = str(state['_childId'])
-            self._children[child_id]._handle_javascript_state_changed(state['state'])
+            if child_id in self._children:
+                self._children[str(child_id)]._handle_javascript_state_changed(state['state'])
+            else:
+                logger.error('WIDGET:{{ widget.type }}:_handle_javascript_state_changed:Child %s not found', child_id)
             return
+        for key, val in state.items():
+            self._javascript_state[key] = val  # for snapshot
         self._component._handle_javascript_state_changed(state)
     
-    def _handle_add_child(self, child_id, project_name, type):
+    def _handle_add_child(self, child_id, project_name, type, is_dynamic_child):
+        logger.info('WIDGET:{{ widget.type }}:_handle_add_child: %s %s %s', child_id, project_name, type)
         child_id = str(child_id)
         mod = importlib.import_module(project_name)
         WIDGET = getattr(mod, type)
         W = WIDGET()
+        if is_dynamic_child:
+            W._set_dynamic_child(True)
         self._connect_child(child_id, W)
-        self._children[child_id] = W
-        self._child_ids.append(child_id)
+        self._children[str(child_id)] = W
+        self._child_ids.append(str(child_id))
         return W
 
-    def _serialize(self, include_javascript_state=False, include_python_state=False, include_bundle_fname=False):
+    def _serialize(self, include_javascript_state=False, include_python_state=False, include_bundle_fname=False, child_id=''):
+        children_serialized = []
+        for child_id in self._child_ids:
+            children_serialized.append(
+                self._children[str(child_id)]._serialize(
+                    include_javascript_state=include_javascript_state,
+                    include_python_state=include_python_state,
+                    include_bundle_fname=include_bundle_fname,
+                    child_id=child_id
+                )
+            )
         obj = dict(
             project_name='{{ project_name }}',
             type='{{ widget.type }}',
-            children=[
-                self._children[child_id]._serialize(include_javascript_state=include_javascript_state,
-                              include_python_state=include_python_state, include_bundle_fname=include_bundle_fname)
-                for child_id in self._child_ids
-            ],
-            props=_json_serialize(self._props)
+            children=children_serialized,
+            props=_json_serialize(self._props),
+            is_dynamic_child=self._is_dynamic_child,
+            child_id=child_id
         )
         if include_javascript_state:
             obj['javascript_state'] = _json_serialize(self._javascript_state)
@@ -128,8 +153,8 @@ class {{ widget.type }}:
         self._reactopya_widget = RW(
             project_name='{{ project_name }}',
             type='{{ widget.type }}',
-            children=[
-                self._children[child_id]._serialize()
+            initial_children=[
+                self._children[str(child_id)]._serialize(child_id=child_id)
                 for child_id in self._child_ids
             ],
             props=self._props
@@ -143,7 +168,7 @@ class {{ widget.type }}:
         self._reactopya_widget.on_javascript_state_changed(
             self._handle_javascript_state_changed)
         self._reactopya_widget.on_add_child(
-            self._handle_add_child
+            self._handle_add_child_data
         )
 
         self._reactopya_widget.show()
@@ -191,17 +216,18 @@ class {{ widget.type }}:
     
     def add_serialized_children(self, children):
         for i, child in enumerate(children):
-            W = self._handle_add_child(i, child.get('project_name', '{{ project_name }}'), child['type'])
+            W = self._handle_add_child(i, child.get('project_name', '{{ project_name }}'), child['type'], child.get('is_dynamic', False))
             child_children = child.get('children', [])
             if len(child_children) > 0:
                 W.add_serialized_children(child_children)
     
     def _handle_add_child_data(self, data):
+        logger.info('WIDGET:{{ widget.type }}:_handle_add_child_data: %s', data)
         if '_childId' in data:
             child_id = str(data['_childId'])
-            self._children[child_id]._handle_add_child_data(data['data'])
+            self._children[str(child_id)]._handle_add_child_data(data['data'])
             return
-        self._handle_add_child(data['childId'], data['projectName'], data['type'])
+        self._handle_add_child(data['childId'], data['projectName'], data['type'], data.get('isDynamic', False))
     
     # internal function to handle incoming message (coming from javascript component)
     def _handle_message_process_mode(self, msg):
@@ -270,6 +296,7 @@ class {{ widget.type }}:
 </head>
 
 <body>
+    <span>Loading html file...</span>
     <script type="text/javascript">
 
         var snapshot = get_snapshot_json_b64();
@@ -279,16 +306,161 @@ class {{ widget.type }}:
         }
         window.snapshot=snapshot;
 
+        class ReactopyaModel {
+            constructor(projectName, type) {
+                this._projectName = projectName;
+                this._type = type;
+
+                this._pythonStateStringified = {};
+                this._javaScriptStateStringified = {};
+                this._childModels = {};
+
+                this._pythonStateChangedHandlers = [];
+                this._javaScriptStateChangedHandlers = [];
+                this._childModelAddedHandlers = [];
+                this._startHandlers = [];
+                this._stopHandlers = [];
+                this._running = false;
+            }
+            projectName() {
+                return this._projectName;
+            }
+            type() {
+                return this._type;
+            }
+
+            setPythonState(state) {
+                if (state._childId) {
+                    this._childModels[state._childId + ''].setPythonState(state.state);
+                    return;
+                }
+                this._setStateHelper(state, this._pythonStateStringified, this._pythonStateChangedHandlers);
+            }
+            setJavaScriptState(state) {
+                this._setStateHelper(state, this._javaScriptStateStringified, this._javaScriptStateChangedHandlers);
+            }
+            getPythonState() {
+                let ret = {};
+                for (let key in this._pythonStateStringified) {
+                    ret[key] = JSON.parse(this._pythonStateStringified[key]);
+                }
+                return ret;
+            }
+            getJavaScriptState() {
+                let ret = {};
+                for (let key in this._javaScriptStateStringified) {
+                    ret[key] = JSON.parse(this._javaScriptStateStringified[key]);
+                }
+                return ret;
+            }
+            addChildModelsFromSerializedChildren(children) {
+                for (let i in children) {
+                    let child = children[i];
+                    let chmodel = this.addChild(i, child.project_name || this._projectName, child.type, false);
+                    chmodel.addChildModelsFromSerializedChildren(child.children || []);
+                }
+            }
+            addChild(childId, projectName, type, isDynamic) {
+                if (childId in this._childModels) {
+                    return this._childModels[childId + ''];
+                }
+                let model = new ReactopyaModel(projectName, type);
+                model.onJavaScriptStateChanged((state) => {
+                    for (let handler of this._javaScriptStateChangedHandlers) {
+                        handler({
+                            _childId: childId,
+                            state: state
+                        });
+                    }
+                });
+                model.onChildModelAdded((data) => {
+                    for (let handler of this._childModelAddedHandlers) {
+                        handler({
+                            _childId: childId,
+                            data: data
+                        });
+                    }
+                });
+                model.onStart(() => {
+                    this.start();
+                });
+                model.onStop(() => {
+                    this.stop();
+                });
+                this._childModels[childId + ''] = model;
+                for (let handler of this._childModelAddedHandlers) {
+                    handler({
+                        childId: childId,
+                        projectName: projectName,
+                        type: type,
+                        isDynamic: isDynamic
+                    });
+                }
+                return model;
+            }
+            childModel(childId) {
+                return this._childModels[childId + ''];
+            }
+            start() {
+                if (this._running)
+                    return;
+                for (let handler of this._startHandlers)
+                    handler();
+            }
+            stop() {
+                this._running = false;
+                for (let handler of this._stopHandlers)
+                    handler();
+            }
+            onPythonStateChanged(handler) {
+                this._pythonStateChangedHandlers.push(handler);
+            }
+            onJavaScriptStateChanged(handler) {
+                this._javaScriptStateChangedHandlers.push(handler);
+            }
+            onChildModelAdded(handler) {
+                this._childModelAddedHandlers.push(handler);
+            }
+            onStart(handler) {
+                this._startHandlers.push(handler);
+            }
+            onStop(handler) {
+                this._stopHandlers.push(handler);
+            }
+            _setStateHelper(state, existingStateStringified, handlers) {
+                let changedState = {};
+                let somethingChanged = false;
+                for (let key in state) {
+                    let val = state[key];
+                    let valstr = JSON.stringify(val);
+                    if (valstr !== existingStateStringified[key]) {
+                        existingStateStringified[key] = valstr;
+                        changedState[key] = JSON.parse(valstr);
+                        somethingChanged = true;
+                    }
+                }
+                if (somethingChanged) {
+                    for (let handler of handlers) {
+                        handler(changedState);
+                    }
+                }
+            }
+        }
+
         var sw = snapshot.serialized_widget;
-        set_init_state_on_props(sw);
+        let model = create_reactopya_model(sw);
+        attach_reactopya_model(sw, model);
+        // set_init_state_on_props(sw);
 
         window.reactopya.disable_python_backend = true;
 
+        document.body.innerHTML=''; // remove the loading message
         var div = document.createElement('div');
         div.id = 'root';
         document.body.appendChild(div);
-        window.reactopya.widgets[sw.project_name][sw.type].render(div, sw.children, sw.props, sw.key || '', null);
+        window.reactopya.widgets[sw.project_name][sw.type].render(div, sw.children, sw.props, sw.key || '', sw.reactopyaModel || null);
 
+        /*
         function set_init_state_on_props(serialized_widget) {
             let init_state = {};
             for (let key in serialized_widget.javascript_state) {
@@ -300,6 +472,35 @@ class {{ widget.type }}:
             serialized_widget.props.reactopya_init_state = init_state;
             for (let child of serialized_widget.children) {
                 set_init_state_on_props(child);
+            }
+        }
+        */
+
+        function create_reactopya_model(serialized_widget) {
+            let ret = new ReactopyaModel(serialized_widget.project_name, serialized_widget.type);
+            create_reactopya_model_2(serialized_widget, ret);
+            return ret;
+
+            function create_reactopya_model_2(serialized_widget, model) {
+                model.setJavaScriptState(serialized_widget.javascript_state || {});
+                model.setPythonState(serialized_widget.python_state || {});
+                for (let child of serialized_widget.children) {
+                    let child_id = child.child_id;
+                    let child_model = model.addChild(child_id, child.project_name, child.type, child.is_dynamic);
+                    create_reactopya_model_2(child, child_model);
+                }
+                return model;
+            }
+        }
+
+        function attach_reactopya_model(serialized_widget, model) {
+            serialized_widget.reactopyaModel = model;
+            for (let child of serialized_widget.children) {
+                let child_id = child.child_id;
+                if (!child.is_dynamic) {
+                    let child_model = model.childModel(child_id);
+                    attach_reactopya_model(child, child_model);
+                }
             }
         }
 

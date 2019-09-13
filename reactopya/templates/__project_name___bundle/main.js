@@ -71,11 +71,17 @@ function _create_element(type, children, props, key, reactopyaModel) {
     props = props || {};
     key = key || undefined;
     let Comp = widgetsByType[type];
+    let nondynamic_children = [];
+    for (let child of children) {
+        if (!child.is_dymamic_child) {
+            nondynamic_children.push(child);
+        }
+    }
     return (
         <Comp {...props} reactopyaModel={reactopyaModel}>
             {
-                children.map((child, i) => {
-                    const childReactopyaModel = reactopyaModel.childModel(i);
+                nondynamic_children.map((child, i) => {
+                    const childReactopyaModel = reactopyaModel ? reactopyaModel.childModel(i) : null;
                     if (child.project_name === '{{ project_name }}') {
                         return _create_element(child.type, child.children, child.props, child.key, childReactopyaModel)
                     }

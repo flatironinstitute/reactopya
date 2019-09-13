@@ -2,6 +2,8 @@ import ipywidgets as widgets
 from traitlets import Unicode, Dict, List
 from ._version import __version__ as version
 import numpy as np
+import logging
+logger = logging.getLogger('reactopya')
 
 @widgets.register
 class ReactopyaJupyterWidget(widgets.DOMWidget):
@@ -16,7 +18,7 @@ class ReactopyaJupyterWidget(widgets.DOMWidget):
     # traitlets
     _project_name = Unicode('').tag(sync=True)
     _type = Unicode('').tag(sync=True)
-    _initial_children = Dict([]).tag(sync=True)
+    _initial_children = List([]).tag(sync=True)
     _props = Dict({}).tag(sync=True)
     _key = Unicode('').tag(sync=True)
     _reactopya_jup_version = Unicode('').tag(sync=True)
@@ -37,7 +39,7 @@ class ReactopyaJupyterWidget(widgets.DOMWidget):
         self.set_trait('_project_name', project_name)
         self.set_trait('_type', type)
         self.set_trait('_props', _json_serialize(props))
-        self.set_trait('_initial_children', _json_serialize(dict(children=initial_children)))
+        self.set_trait('_initial_children', _json_serialize(initial_children))
         self.set_trait('_key', key)
         self.on_msg(self._handle_message)
 
@@ -50,6 +52,7 @@ class ReactopyaJupyterWidget(widgets.DOMWidget):
         display(self)
     
     def set_python_state(self, state):
+        logger.info('ReactopyaJupyterWidget:set_python_state for %s', self._m_type)
         self.send(dict(
             name='setPythonState',
             state=_json_serialize(state)
@@ -65,14 +68,14 @@ class ReactopyaJupyterWidget(widgets.DOMWidget):
         name = content.get('name', '')
         if name == 'setJavaScriptState':
             state = content['state']
+            logger.info('ReactopyaJupyterWidget:_handle_message:setJavaScriptState for %s: %s', self._m_type, state)
             for handler in self._javascript_state_changed_handlers:
                 handler(state)
         elif name == 'addChild':
-            child_id = content.get('child_id')
-            project_name = content.get('project_name')
-            type = content.get('type')
+            data = content.get('data')
+            logger.info('ReactopyaJupyterWidget:_handle_message:addChild for %s: %s', self._m_type, data)
             for handler in self._add_child_handlers:
-                handler(child_id, project_name, type)
+                handler(data)
         else:
             raise Exception('Unexpected message name: {}'.format(name))
 

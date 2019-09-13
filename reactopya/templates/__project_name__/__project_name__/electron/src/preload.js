@@ -37,7 +37,7 @@ class JavaScriptPythonStateModelElectron {
             let val = state[key];
             let valstr = JSON.stringify(val);
             if (valstr !== existingStateStringified[key]) {
-                existingStateStringified[key] = val;
+                existingStateStringified[key] = valstr;
                 changedState[key] = JSON.parse(valstr);
                 somethingChanged = true;
             }

@@ -1,4 +1,6 @@
-export default class ReactopyaModel {
+// This file is duplicated between reactopya_jup/lib and reactopya/templates/__project_name___gallery/src/components
+
+class ReactopyaModel {
     constructor(projectName, type) {
         this._projectName = projectName;
         this._type = type;
@@ -12,6 +14,7 @@ export default class ReactopyaModel {
         this._childModelAddedHandlers = [];
         this._startHandlers = [];
         this._stopHandlers = [];
+        this._running = false;
     }
     projectName() {
         return this._projectName;
@@ -22,7 +25,7 @@ export default class ReactopyaModel {
 
     setPythonState(state) {
         if (state._childId) {
-            this._childModels[state._childId].setPythonState(state.state);
+            this._childModels[state._childId + ''].setPythonState(state.state);
             return;
         }
         this._setStateHelper(state, this._pythonStateStringified, this._pythonStateChangedHandlers);
@@ -30,16 +33,30 @@ export default class ReactopyaModel {
     setJavaScriptState(state) {
         this._setStateHelper(state, this._javaScriptStateStringified, this._javaScriptStateChangedHandlers);
     }
+    getPythonState() {
+        let ret = {};
+        for (let key in this._pythonStateStringified) {
+            ret[key] = JSON.parse(this._pythonStateStringified[key]);
+        }
+        return ret;
+    }
+    getJavaScriptState() {
+        let ret = {};
+        for (let key in this._javaScriptStateStringified) {
+            ret[key] = JSON.parse(this._javaScriptStateStringified[key]);
+        }
+        return ret;
+    }
     addChildModelsFromSerializedChildren(children) {
         for (let i in children) {
             let child = children[i];
-            let chmodel = this.addChild(i, child.project_name || this._projectName, child.type);
+            let chmodel = this.addChild(i, child.project_name || this._projectName, child.type, false);
             chmodel.addChildModelsFromSerializedChildren(child.children || []);
         }
     }
-    addChild(childId, projectName, type) {
+    addChild(childId, projectName, type, isDynamic) {
         if (childId in this._childModels) {
-            return this._childModels[childId];
+            return this._childModels[childId + ''];
         }
         let model = new ReactopyaModel(projectName, type);
         model.onJavaScriptStateChanged((state) => {
@@ -50,17 +67,42 @@ export default class ReactopyaModel {
                 });
             }
         });
-        this._childModels[childId] = model;
+        model.onChildModelAdded((data) => {
+            for (let handler of this._childModelAddedHandlers) {
+                handler({
+                    _childId: childId,
+                    data: data
+                });
+            }
+        });
+        model.onStart(() => {
+            this.start();
+        });
+        model.onStop(() => {
+            this.stop();
+        });
+        this._childModels[childId + ''] = model;
         for (let handler of this._childModelAddedHandlers) {
-            handler(childId, projectName, type);
+            handler({
+                childId: childId,
+                projectName: projectName,
+                type: type,
+                isDynamic: isDynamic
+            });
         }
         return model;
     }
+    childModel(childId) {
+        return this._childModels[childId + ''];
+    }
     start() {
+        if (this._running)
+            return;
         for (let handler of this._startHandlers)
             handler();
     }
     stop() {
+        this._running = false;
         for (let handler of this._stopHandlers)
             handler();
     }
@@ -86,7 +128,7 @@ export default class ReactopyaModel {
             let val = state[key];
             let valstr = JSON.stringify(val);
             if (valstr !== existingStateStringified[key]) {
-                existingStateStringified[key] = val;
+                existingStateStringified[key] = valstr;
                 changedState[key] = JSON.parse(valstr);
                 somethingChanged = true;
             }
@@ -98,3 +140,5 @@ export default class ReactopyaModel {
         }
     }
 }
+
+module.exports = ReactopyaModel;

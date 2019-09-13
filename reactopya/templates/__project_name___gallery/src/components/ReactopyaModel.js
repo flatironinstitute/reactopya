@@ -1,3 +1,5 @@
+// This file is duplicated between reactopya_jup/lib and reactopya/templates/__project_name___gallery/src/components
+
 export default class ReactopyaModel {
     constructor(projectName, type) {
         this._projectName = projectName;
@@ -31,15 +33,29 @@ export default class ReactopyaModel {
     setJavaScriptState(state) {
         this._setStateHelper(state, this._javaScriptStateStringified, this._javaScriptStateChangedHandlers);
     }
+    getPythonState() {
+        let ret = {};
+        for (let key in this._pythonStateStringified) {
+            ret[key] = JSON.parse(this._pythonStateStringified[key]);
+        }
+        return ret;
+    }
+    getJavaScriptState() {
+        let ret = {};
+        for (let key in this._javaScriptStateStringified) {
+            ret[key] = JSON.parse(this._javaScriptStateStringified[key]);
+        }
+        return ret;
+    }
     addChildModelsFromSerializedChildren(children) {
         for (let i in children) {
             let child = children[i];
-            let chmodel = this.addChild(i, child.project_name || this._projectName, child.type);
+            let chmodel = this.addChild(i, child.project_name || this._projectName, child.type, false);
             chmodel.addChildModelsFromSerializedChildren(child.children || []);
         }
     }
-    addChild(childId, projectName, type) {
-        if (childId in this._childModels) {
+    addChild(childId, projectName, type, isDynamic) {
+        if ((childId + '') in this._childModels) {
             return this._childModels[childId + ''];
         }
         let model = new ReactopyaModel(projectName, type);
@@ -70,7 +86,8 @@ export default class ReactopyaModel {
             handler({
                 childId: childId,
                 projectName: projectName,
-                type: type
+                type: type,
+                isDynamic: isDynamic
             });
         }
         return model;
@@ -111,7 +128,7 @@ export default class ReactopyaModel {
             let val = state[key];
             let valstr = JSON.stringify(val);
             if (valstr !== existingStateStringified[key]) {
-                existingStateStringified[key] = val;
+                existingStateStringified[key] = valstr;
                 changedState[key] = JSON.parse(valstr);
                 somethingChanged = true;
             }

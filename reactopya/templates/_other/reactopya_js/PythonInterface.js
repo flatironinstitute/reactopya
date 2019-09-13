@@ -18,7 +18,9 @@ export default class PythonInterface {
             let parentModel = parent.reactopyaModel || parent.props.reactopyaModel;
             let childId = reactComponent.props.reactopyaChildId;
             if (childId) {
-                let model = parentModel.addChild(childId, this._projectName, this._type);
+                let isDynamic = true;
+                console.log(`---- adding child model ${this._type}: id=${childId}. Does it exist?`, parentModel.childModel(childId));
+                let model = parentModel.addChild(childId, this._projectName, this._type, isDynamic);
                 reactComponent.reactopyaModel = model; // i don't think we can set the props here
                 this._reactopyaModel = model;    
             }
@@ -28,10 +30,7 @@ export default class PythonInterface {
         }
     }
     start() {
-        if (this._reactComponent.props.reactopya_init_state) {
-            // this is for snapshots (static html exports)
-            this._reactComponent.setState(this._reactComponent.props.reactopya_init_state);
-        }
+        this._setComponentStateFromModel(); // this is important for snapshots (static html exports)
         if (this._reactopyaModel) {
             this._reactopyaModel.onPythonStateChanged((state) => {
                 this._reactComponent.setState(state);
@@ -39,16 +38,6 @@ export default class PythonInterface {
             this._reactopyaModel.start();
         }
         else {
-            if ((window.reactopya) && (window.reactopya.disable_python_backend)) {
-                console.info('Python backend disabled');
-            }
-            // else {
-            //     if (!this._pythonProcess) {
-            //         this._pythonProcess = new PythonProcess(this._pythonModuleName, this._type);
-            //         this._pythonProcess.onReceiveMessage(this._handleReceiveMessageFromProcess);
-            //         this._pythonProcess.start();
-            //     }
-            // }
             window.addEventListener('beforeunload', () => {
                 this.stop();
                 window.removeEventListener('beforeunload', this._cleanup); // remove the event handler for normal unmounting
@@ -135,6 +124,22 @@ export default class PythonInterface {
         }
         this._reactComponent.setState(newState);
     }
+    _setComponentStateFromModel() {
+        // important for html snapshots
+        let newState = {};
+        if (this._reactopyaModel) {
+            let javaScriptState = this._reactopyaModel.getJavaScriptState();
+            for (let key in javaScriptState) {
+                newState[key] = javaScriptState[key];
+            }
+
+            let pythonState = this._reactopyaModel.getPythonState();
+            for (let key in pythonState) {
+                newState[key] = pythonState[key];
+            }
+        }
+        this._reactComponent.setState(newState);
+    }
     _copyStateToJavaScriptState() {
         let newState = {};
         for (let key of this._syncStateToJavaScriptStateKeys) {
@@ -181,4 +186,3 @@ function _json_stringify(x) {
         return '';
     }
 }
-

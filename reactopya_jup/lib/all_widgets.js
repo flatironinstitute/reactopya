@@ -20,7 +20,7 @@ class ReactopyaJupyterWidgetModel extends widgets.DOMWidgetModel {
         let that = this;
         const project_name = this.get('_project_name');
         const type = this.get('_type');
-        const initialChildren = this.get('_initial_children');
+        const initialChildren = this.get('_initial_children', []);
         
         this.reactopyaModel = new ReactopyaModel(project_name, type);
         this.reactopyaModel.addChildModelsFromSerializedChildren(initialChildren);
@@ -34,12 +34,10 @@ class ReactopyaJupyterWidgetModel extends widgets.DOMWidgetModel {
         });
 
         // important that this comes after we have added the initial children to the model
-        this.reactopyaModel.onAddChild(function(childId, projectName, type) {
+        this.reactopyaModel.onChildModelAdded(function(data) {
             that.send({
                 name: 'addChild',
-                child_id: childId,
-                project_name: projectName,
-                type: type
+                data: data
             });
         });
     }
@@ -48,7 +46,7 @@ class ReactopyaJupyterWidgetModel extends widgets.DOMWidgetModel {
         if (name == 'initialize') {
             this._initialize();
         }
-        if (name == 'setPythonState') {
+        else if (name == 'setPythonState') {
             let state = content.state;
             this.reactopyaModel.setPythonState(state);
         }
@@ -69,7 +67,7 @@ class ReactopyaJupyterWidgetModel extends widgets.DOMWidgetModel {
             _type: 'unknown',
             _props: {},
             _key: '',
-            _initial_children: {}
+            _initial_children: []
         });
     }
 }
@@ -85,10 +83,11 @@ class ReactopyaJupyterWidgetView extends widgets.DOMWidgetView {
 
         const project_name = this.model.get('_project_name');
         const type = this.model.get('_type');
-        let props = this.model.get('_props');
-        let key = this.model.get('_key')
-        
-        window.reactopya.widgets[project_name][type].render(this.div, this.model._initial_children, props, key || undefined, this.model.reactopyaModel);
+        let props = this.model.get('_props', {});
+        let key = this.model.get('_key');
+        let initial_children = this.model.get('_initial_children', []);
+
+        window.reactopya.widgets[project_name][type].render(this.div, initial_children, props, key || undefined, this.model.reactopyaModel);
     }
 }
 
