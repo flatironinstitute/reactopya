@@ -2,8 +2,8 @@ import React, { Component } from 'react';
 import * as allWidgets from '../../{{ project_name }}_widgets';
 import { Paper, Grid, IconButton } from "@material-ui/core";
 import { FaExpandArrowsAlt, FaCompressArrowsAlt } from "react-icons/fa";
-import ReactopyaModel from './ReactopyaModel';
 import PythonProcess from './PythonProcess';
+const ReactopyaModel = require('./ReactopyaModel.js');
 
 class LazyLoader extends Component {
     constructor(props) {

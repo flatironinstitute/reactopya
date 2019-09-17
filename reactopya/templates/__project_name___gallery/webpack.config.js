@@ -70,7 +70,7 @@ module.exports.push({
         extensions: ['.css', '.js', '.json', '.png', '.gif', '.jpg', '.svg'],
         alias: {
             'react-dom': '@hot-loader/react-dom',
-            'reactopya': __dirname + '/reactopya_js'
+            'reactopya': __dirname + '/reactopya_common'
         }
     },
     output: {

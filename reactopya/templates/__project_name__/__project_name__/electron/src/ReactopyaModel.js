@@ -69,12 +69,7 @@ class ReactopyaModel {
     addChildModelsFromSerializedChildren(children) {
         for (let i in children) {
             let child = children[i];
-            let chmodel = this.addChild(
-                child.child_id != undefined ? child.child_id : i,
-                child.project_name || this._projectName,
-                child.type,
-                false
-            );
+            let chmodel = this.addChild(i, child.project_name || this._projectName, child.type, false);
             chmodel.addChildModelsFromSerializedChildren(child.children || []);
         }
     }

@@ -29,8 +29,10 @@ class ReactopyaJupyterWidget(widgets.DOMWidget):
         self._m_project_name = project_name
         self._m_type = type
         self._m_children = dict()
-        for i, ch in enumerate(initial_children):
-            self._m_children[i] = ch
+        self._child_ids = []
+        for child_id, ch in enumerate(initial_children):
+            self._m_children[str(child_id)] = ch
+            self._child_ids.append(child_id)
         self._m_props = props
         self._m_key = key
         self._javascript_state_changed_handlers = []

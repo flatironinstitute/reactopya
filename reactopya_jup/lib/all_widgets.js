@@ -87,7 +87,13 @@ class ReactopyaJupyterWidgetView extends widgets.DOMWidgetView {
         let key = this.model.get('_key');
         let initial_children = this.model.get('_initial_children', []);
 
-        window.reactopya.widgets[project_name][type].render(this.div, initial_children, props, key || undefined, this.model.reactopyaModel);
+        window.reactopya.widgets[project_name][type].render(
+            this.div,
+            initial_children,
+            props,
+            key || undefined,
+            this.model.reactopyaModel
+        );
     }
 }
 

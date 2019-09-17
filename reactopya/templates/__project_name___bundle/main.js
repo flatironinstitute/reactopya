@@ -66,10 +66,11 @@ class ChildWrapper extends Component {
     }
 }
  
-function _create_element(type, children, props, key, reactopyaModel) {
+function _create_element(type, children, props, key, reactopyaModel, opts) {
     children = children || [];
     props = props || {};
     key = key || undefined;
+    opts = opts || {};
     let Comp = widgetsByType[type];
     let nondynamic_children = [];
     for (let child of children) {
@@ -77,7 +78,7 @@ function _create_element(type, children, props, key, reactopyaModel) {
             nondynamic_children.push(child);
         }
     }
-    return (
+    let comp = (
         <Comp {...props} reactopyaModel={reactopyaModel}>
             {
                 nondynamic_children.map((child, i) => {
@@ -98,12 +99,91 @@ function _create_element(type, children, props, key, reactopyaModel) {
             }
         </Comp>
     );
+    if (opts.fullBrowser) {
+        return (
+            <FullBrowser>
+                {comp}
+            </FullBrowser>
+        )
+    }
+    else {
+        return comp;
+    }
+}
+
+class FullBrowser extends Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            width: null,
+            height: null
+        };
+    }
+
+    async componentDidMount() {
+        this.updateDimensions();
+        window.addEventListener("resize", this.resetSize);
+    }
+
+    componentWillUnmount() {
+        window.removeEventListener("resize", this.resetSize);
+    }
+
+    resetSize = () => {
+        this.setState({
+            width: null,
+            height: null
+        });
+    }
+
+    async componentDidUpdate(prevProps, prevState) {
+        if (!this.state.width) {
+            this.updateDimensions();
+        }
+    }
+
+    updateDimensions() {
+        if (!this.container) return;
+        let W0 = document.body.clientWidth;
+        let H0 = document.body.clientHeight;
+        if ((this.state.width !== W0) || (this.state.height !== H0)) {
+            this.setState({
+                width: W0, // see render()
+                height: H0
+            });
+        }
+    }
+
+    render() {
+        const elmt = React.Children.only(this.props.children)
+        let { width, height } = this.state;
+        if (!width) width = 300;
+        if (!height) height = 300;
+        let new_props = {
+            width: width,
+            height: height
+        };
+        for (let key in elmt.props) {
+            new_props[key] = elmt.props[key];
+        }
+
+        let style0 = { position: 'relative', left: 0, right: 0, top: 0, bottom: 0 };
+        return (
+            <div
+                className="determiningWidth"
+                ref={el => (this.container = el)}
+                style={style0}
+            >
+                <elmt.type { ...new_props }  />
+            </div>
+        );
+    }
 }
 
 {% for widget in widgets %}
 window.reactopya.widgets.{{ project_name }}['{{ widget.type }}'] = {
-    render: function(div, children, props, key, reactopyaModel) {
-        let X = _create_element('{{ widget.type }}', children, props, key, reactopyaModel);
+    render: function(div, children, props, key, reactopyaModel, opts) {
+        let X = _create_element('{{ widget.type }}', children, props, key, reactopyaModel, opts);
         ReactDOM.render(X, div);
     }
 }

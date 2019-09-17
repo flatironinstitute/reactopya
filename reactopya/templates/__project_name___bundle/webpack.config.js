@@ -71,7 +71,7 @@ https://github.com/facebook/react/issues/13991
 const resolve = {
     extensions: ['.css', '.js', '.json', '.png', '.gif', '.jpg', '.svg'],
     alias: {
-        'reactopya': __dirname + '/reactopya_js',
+        'reactopya': __dirname + '/reactopya_common',
         'react': __dirname + '/node_modules/react' // See above
     }
 };

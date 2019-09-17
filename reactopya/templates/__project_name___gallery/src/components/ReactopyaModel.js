@@ -1,6 +1,17 @@
-// This file is duplicated between reactopya_jup/lib and reactopya/templates/__project_name___gallery/src/components
+/*
+This file is duplicated between
+* reactopya_jup/lib/ReactopyaModel.js and
+* reactopya/templates/__project_name___gallery/src/components/ReactopyaModel.js
+* reactopya/templates/__project_name__/__project_name__/electron/src/ReactopyaModel.js
+Only edit the one in
+reactopya/templates/__project_name___gallery/src/components/ReactopyaModel.js
+Other edits will get overwritten when you run
 
-export default class ReactopyaModel {
+> reactopya/devel/sync_code.py
+
+*/
+
+class ReactopyaModel {
     constructor(projectName, type) {
         this._projectName = projectName;
         this._type = type;
@@ -140,3 +151,5 @@ export default class ReactopyaModel {
         }
     }
 }
+
+module.exports = ReactopyaModel;

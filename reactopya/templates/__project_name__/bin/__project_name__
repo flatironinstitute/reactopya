@@ -4,6 +4,7 @@ import argparse
 from argparse import RawTextHelpFormatter
 import json
 import importlib
+from mountaintools import client as mt
 
 def main():
     commands = [
@@ -34,11 +35,15 @@ def main():
 
     commands_by_name[command](args=args)
 
+
 def _show(*, args):
     widget_fname = args.widget
     if not widget_fname:
         raise Exception('Missing required argument: --widget')
-    with open(widget_fname, 'r') as f:
+    widget_fname2 = mt.realizeFile(widget_fname)
+    if not widget_fname2:
+        raise Exception('Unable to realize file: {}'.format(widget_fname2))
+    with open(widget_fname2, 'r') as f:
         widget = json.load(f)
     X = _make_widget_instance(widget, '{{ project_name }}')
     X.show()
@@ -46,6 +51,7 @@ def _show(*, args):
 _global = dict(
     _initialized_project_names={}
 )
+
 
 def _make_widget_instance(widget, default_project_name):
     project_name = widget.get('project_name', default_project_name)
@@ -61,10 +67,10 @@ def _make_widget_instance(widget, default_project_name):
         for ch in children
     ]
     WIDGET = getattr(mod, type)
+    print(children2)
     X = WIDGET(*children2, **props)
     return X
     
-
 
 if __name__ == '__main__':
     main()

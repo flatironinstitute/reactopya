@@ -434,7 +434,22 @@ def _load_config():
     config['reactopya_version'] = reactopya.__version__
 
     config['widgets'] = _load_widgets_config()
+
+    config['ReactopyaModelCode'] = _read_reactopya_model_code()
+
     return config
+
+
+def _read_reactopya_model_code():
+    path = os.path.join(reactopya_templates_directory(), '__project_name___gallery', 'src', 'components', 'ReactopyaModel.js')
+    with open(path, 'r') as f:
+        txt = f.read()
+    lines = txt.splitlines(keepends=True)
+    lines2 = []
+    for line in lines:
+        if not line.startswith('module.exports'):
+            lines2.append(line)
+    return ''.join(lines2)
 
 
 def _load_widgets_config():
@@ -479,8 +494,8 @@ def _generate_directory(template_source_path, dest_path, config, args, do_render
     if len(fnames) == 1 and fnames[0] == '.widgets_go_here':
         return _generate_directory('widgets', dest_path, config, args=args, do_render=False)
     
-    if len(fnames) == 1 and fnames[0] == '.reactopya_js_goes_here':
-        return _generate_directory(os.path.join(reactopya_templates_directory(), '_other', 'reactopya_js'), dest_path, config, args=args, do_render=do_render)
+    if len(fnames) == 1 and fnames[0] == '.reactopya_common_goes_here':
+        return _generate_directory(os.path.join(reactopya_templates_directory(), '_other', 'reactopya_common'), dest_path, config, args=args, do_render=do_render)
 
     if not os.path.exists(dest_path):
         os.mkdir(dest_path)

@@ -90,24 +90,18 @@ async function show() {
         const children = JSON.parse(\`${JSON.stringify(children)}\`);
         const props = JSON.parse(\`${JSON.stringify(props)}\`);
         let process0 = new window.ReactopyaElectronPythonProcess('${message_dir}', children);
-        let model0 = process0.javaScriptPythonStateModel();
-        props.javaScriptPythonStateModel = model0;
-        set_models_on_children('${project_name}', children, model0);
-        window.reactopya.widgets.${project_name}.${type}.render(div, children, props, '${key}');
-        process0.start();
-
-        function set_models_on_children(parent_project_name, children1, model1) {
-            for (let i=0; i<children1.length; i++) {
-                if (!children1[i].project_name) {
-                    children1[i].project_name = parent_project_name;
-                }
-                let props = children1[i].props || {};
-                props.javaScriptPythonStateModel = model1.childModel(i);
-                children1[i].props = props;
-
-                set_models_on_children(children1[i].project_name, children1[i].children||[], model1.childModel(i));
+        let model0 = process0.reactopyaModel();
+        window.reactopya.widgets.${project_name}.${type}.render(
+            div,
+            children,
+            props,
+            '${key}',
+            model0,
+            {
+                fullBrowser: true
             }
-        }
+        );
+        process0.start();
     }
     `;
     await exec_javascript(mainWindow, js);

@@ -1,54 +1,8 @@
 window.using_electron = true;
 
 const util = require('util');
-
 const fs = require('fs');
-
-class JavaScriptPythonStateModelElectron {
-    constructor() {
-        this._pythonStateStringified = {};
-        this._javaScriptStateStringified = {};
-        this._pythonStateChangedHandlers = [];
-        this._javaScriptStateChangedHandlers = [];
-        this._childModels = [];
-    }
-    setPythonState(state) {
-        this._setStateHelper(state, this._pythonStateStringified, this._pythonStateChangedHandlers);
-    }
-    setJavaScriptState(state) {
-        this._setStateHelper(state, this._javaScriptStateStringified, this._javaScriptStateChangedHandlers);
-    }
-    onPythonStateChanged(handler) {
-        this._pythonStateChangedHandlers.push(handler);
-    }
-    onJavaScriptStateChanged(handler) {
-        this._javaScriptStateChangedHandlers.push(handler);
-    }
-    addChildModel(model) {
-        this._childModels.push(model);
-    }
-    childModel(index) {
-        return this._childModels[index];
-    }
-    _setStateHelper(state, existingStateStringified, handlers) {
-        let changedState = {};
-        let somethingChanged = false;
-        for (let key in state) {
-            let val = state[key];
-            let valstr = JSON.stringify(val);
-            if (valstr !== existingStateStringified[key]) {
-                existingStateStringified[key] = valstr;
-                changedState[key] = JSON.parse(valstr);
-                somethingChanged = true;
-            }
-        }
-        if (somethingChanged) {
-            for (let handler of handlers) {
-                handler(changedState);
-            }
-        }
-    }
-}
+const ReactopyaModel = require('./ReactopyaModel.js');
 
 class ReactopyaElectronPythonProcess {
     constructor(message_dir, children) {
@@ -57,19 +11,15 @@ class ReactopyaElectronPythonProcess {
         this._receive_message_handlers = [];
         this._javaScriptPythonStateModel = null;
         this._message_index = 1000000;
-        this._model = new JavaScriptPythonStateModelElectron();
+        this._model = new ReactopyaModel();
         this.onReceiveMessage((msg) => {
             if (msg.name === 'setPythonState') {
-                let ptr = this._model;
-                for (let ind of msg.child_indices) {
-                    ptr = ptr.childModel(ind);
-                }
-                ptr.setPythonState(msg.state);
+                this._model.setPythonState(msg.state);
             }
         });
-        this._initialize_model(this._model, [], children);
+        this._initialize_model(this._model, children);
     }
-    javaScriptPythonStateModel() {
+    reactopyaModel() {
         return this._model;
     }
     start() {
@@ -86,21 +36,23 @@ class ReactopyaElectronPythonProcess {
     onReceiveMessage(handler) {
         this._receive_message_handlers.push(handler);
     }
-    _initialize_model(model, child_indices, children) {
+    _initialize_model(model, children) {
+        let that = this;
         model.onJavaScriptStateChanged((state) => {
-            this.sendMessage({
+            that.sendMessage({
                 name: 'setJavaScriptState',
-                state: state,
-                child_indices: child_indices
+                state: state
             });
         });
-        for (let i=0; i<children.length; i++) {
-            let child_model = new JavaScriptPythonStateModelElectron();
-            model.addChildModel(child_model);
-            let new_inds = JSON.parse(JSON.stringify(child_indices));
-            new_inds.push(i);
-            this._initialize_model(child_model, new_inds, children[i].children || []);
-        }
+        model.addChildModelsFromSerializedChildren(children);
+
+        // important to do this after adding the serialized children because this is for dynamic children
+        model.onChildModelAdded(function(data) {
+            that.send({
+                name: 'addChild',
+                data: data
+            });
+        });
     }
     _iterate() {
         if (!this._running) return;
