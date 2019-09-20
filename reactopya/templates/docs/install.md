@@ -82,6 +82,16 @@ or you can launch a widget from a .json file via:
 
 See the desktop_examples directory which might exist at the root of this repository.
 
+## Web server
+
+To host a {{ project_name }} widget as a web server, simply create the widget in a Python script and then run:
+
+```
+widget.host(port=6065)
+```
+
+where 6065 may be replaced by any open port. Then you can view the widget in your browser by navigating to `http://localhost:6065`. There may be examples of this in the desktop_examples/ directory.
+
 ## Google colaboratory
 
 No extensions are needed for colaboratory, but you do need to pip install reactopya_jup as above. Then the top of your notebook should include:
@@ -132,7 +142,7 @@ reactopya start-gallery-dev
 
 First install the reactopya_jup Python package and JupyterLab and Jupyter Notebook extensions as above
 
-Then:
+Then from the root directory of your project:
 
 ```
 reactopya install-jupyter
@@ -140,19 +150,8 @@ reactopya install-jupyter
 
 Now you should be able to `import {{ project_name }}` as in the example notebook
 
-## Google colab
+**Google colab**
 
-Google colab usage is same as JupyterLab and Jupyter Notebooks except replace `init_jupyter()` by `init_colab()`.
+Google colab usage is the same as JupyterLab and Jupyter Notebooks except replace `init_jupyter()` by `init_colab()`.
 
 While it is possible to use a local runtime for colab, this involves a bit of a hack to get the callbacks to work properly. Ask me about it if you are interested.
-
-## Web server
-
-To open the gallery of {{ project_name }} widgets as a web server, follow the instructions for a development installation above, and then:
-
-```
-reactopya install-server
-reactopya start-server
-```
-
-In the future, it will be possible to host individual widgets on a website, and there will be a greater variety of web deployment options.

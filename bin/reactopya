@@ -26,6 +26,11 @@ def main():
             'description': 'Create a new widget'
         },
         {
+            'name': 'list-widgets',
+            'func': _list_widgets,
+            'description': 'List the widgets in the current project'
+        },
+        {
             'name': 'generate',
             'func': _generate,
             'description': 'Generate or regenerate source code'
@@ -39,6 +44,11 @@ def main():
             'name': 'clean',
             'func': _clean,
             'description': 'Remove all generated code as well as all installation files (e.g., node_modules) within the generated code base.'
+        },
+        {
+            'name': 'install-all',
+            'func': _install_all,
+            'description': 'Perform all installation steps',
         },
         {
             'name': 'install-gallery-dev',
@@ -66,20 +76,10 @@ def main():
             'description': 'Publish generated python package to PiPI'
         },
         {
-            'name': 'build-colab',
-            'func': _build_colab,
-            'description': 'Build the package for use in google colab'
-        },
-        {
             'name': 'install-server',
             'func': _install_server,
-            'description': 'Install gallery server'
-        },
-        {
-            'name': 'list-widgets',
-            'func': _list_widgets,
-            'description': 'List the widgets in the current project'
-        },
+            'description': 'Install server to enable widget.host() for hosting a widget on a web server'
+        }
     ]
     commands_by_name = {}
     for x in commands:
@@ -270,6 +270,10 @@ def _append_text_file(fname, txt):
     txt2 = _read_text_file(fname) + '\n' + txt
     _write_text_file_if_changed(fname, txt2, None)
 
+def _install_all(config, args):
+    _install_gallery_dev(config, args)
+    _install_jupyter(config, args)
+    _install_server(config, args)
 
 def _install_jupyter(config, args):
     _generate(config=config, args=args)
@@ -313,16 +317,11 @@ def _build_bundle(config, args):
             'Shell script exited with non-zero return code: {}'.format(retcode))
 
 def _publish_pypi(config, args):
-    _generate(config=config, args=args)
+    _install_all(config, args)
     cmd = '''
         #!/bin/bash
         set -ex
-        cd generated/{project_name}_bundle
-        echo "======================================= BUNDLE INSTALL ======================================="
-        yarn install
-        echo "======================================= BUNDLE BUILD ======================================="
-        yarn build
-        cd ../{project_name}
+        cd generated/{project_name}
         bash publish_pypi.sh
     '''.format(project_name=config['project_name'])
     shell_cmd = ShellScript(cmd)
@@ -332,33 +331,6 @@ def _publish_pypi(config, args):
     if retcode != 0:
         raise Exception(
             'Shell script exited with non-zero return code: {}'.format(retcode))
-
-def _build_colab(config, args):
-    _generate(config=config, args=args)
-    cmd = '''
-        #!/bin/bash
-        set -ex
-        cd generated/{project_name}_bundle
-        echo "======================================= BUNDLE INSTALL ======================================="
-        yarn install
-        echo "======================================= BUNDLE BUILD ======================================="
-        yarn build
-        cd ../{project_name}_colab
-        echo "======================================= COLAB INSTALL ======================================="
-        yarn install
-        echo "======================================= COLAB BUILD ======================================="
-        yarn build
-    '''.format(project_name=config['project_name'])
-    shell_cmd = ShellScript(cmd)
-    shell_cmd.start()
-    retcode = shell_cmd.wait()
-
-    if retcode != 0:
-        raise Exception(
-            'Shell script exited with non-zero return code: {}'.format(retcode))
-
-    print('You may now publish the generated/{}_colab package to pypi for use in colab.'.format(
-        config['project_name']))
 
 def _generate(config, args):
     (num_processed, num_changed) = _generate_directory(

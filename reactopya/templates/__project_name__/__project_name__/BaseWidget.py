@@ -254,7 +254,6 @@ class _BaseWidget:
             raise Exception('Unsupported format: {}'.format(format))
         serialized_widget = self._serialize(
             include_javascript_state=True, include_python_state=True, include_bundle_fname=True)
-        print('--- serialized_widget props', serialized_widget.get('props'))
         project_names = _get_all_project_names(serialized_widget)
         project_bundle_fnames = _get_project_bundle_fnames(serialized_widget)
         snapshot = dict(

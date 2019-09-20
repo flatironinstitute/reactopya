@@ -66,7 +66,6 @@ class ReactopyaModel {
         }
     }
     addChild(childId, projectName, type, isDynamic) {
-        console.log('----- addChild', childId, projectName, type, isDynamic);
         // if ((childId + '') in this._childModels) {
         //     return this._childModels[childId + ''];
         // }

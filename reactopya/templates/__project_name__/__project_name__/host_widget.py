@@ -4,7 +4,6 @@ import importlib
 from .shellscript import ShellScript
 
 def host_widget(serialized_widget, *, port):
-    print('---- abcexxxxx serialized widget props', serialized_widget.get('props'))
     with tempfile.TemporaryDirectory(prefix='reactopya_host_widget') as tmpdir:
         server = Server(serialized_widget=serialized_widget, port=port, tmpdir=tmpdir)
         try:
@@ -93,7 +92,6 @@ class Connection:
                 raise
 
 def _deserialize_widget(serialized_widget, parent_project_name=None):
-    print('---- abce serialized widget props', serialized_widget.get('props'))
     if parent_project_name is None:
         parent_project_name = '{{ project_name }}'
     project_name = serialized_widget.get('project_name', parent_project_name)
