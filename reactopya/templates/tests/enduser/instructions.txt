@@ -1,0 +1,35 @@
+1. Build the docker image
+
+```
+docker build -t {{ project_name }}_enduser .
+```
+
+2. Run the container (start JupyterLab inside the container)
+
+```
+docker run -p 8899:8888 -v $PWD/../../../notebook_examples:/notebook_examples -it {{ project_name }}_enduser jupyter lab --ip 0.0.0.0 --port 8888 --no-browser --allow-root
+```
+
+or replace 8899 by some available local port
+
+3. Connect to JupyterLab in the browser
+
+Follow the instructions at the bottom of the console output of the container to
+connect to the the JupyterLab session in the notebook. You will need to
+substitute port 8899 (or whatever you chose) for port 8888
+
+4. Open an example notebook
+
+The /notebook_examples directory inside the container should be mounted to the
+notebook_examples directory at the base of the repo. Open one of those
+notebooks.
+
+5. To test jupyter notebook, rather than lab, replace the word "lab" by "notebook" in the command above
+
+6. To test hosting a single widget via web server:
+
+```
+docker run -p 6065:6065 -v $PWD/../../../desktop_examples:/desktop_examples -it {{ project_name }}_enduser /desktop_examples/host_example.py
+```
+
+Or replace host_example.py with a script that actually exists.
