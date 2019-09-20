@@ -48,7 +48,7 @@ class ReactopyaElectronPythonProcess {
 
         // important to do this after adding the serialized children because this is for dynamic children
         model.onChildModelAdded(function(data) {
-            that.send({
+            that.sendMessage({
                 name: 'addChild',
                 data: data
             });

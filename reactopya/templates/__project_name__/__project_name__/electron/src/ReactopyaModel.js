@@ -74,9 +74,10 @@ class ReactopyaModel {
         }
     }
     addChild(childId, projectName, type, isDynamic) {
-        if ((childId + '') in this._childModels) {
-            return this._childModels[childId + ''];
-        }
+        console.log('----- addChild', childId, projectName, type, isDynamic);
+        // if ((childId + '') in this._childModels) {
+        //     return this._childModels[childId + ''];
+        // }
         let model = new ReactopyaModel(projectName, type);
         model.onJavaScriptStateChanged((state) => {
             for (let handler of this._javaScriptStateChangedHandlers) {
@@ -98,7 +99,8 @@ class ReactopyaModel {
             this.start();
         });
         model.onStop(() => {
-            this.stop();
+            // actually we don't stop just because a child stopped!
+            // this.stop();
         });
         this._childModels[childId + ''] = model;
         for (let handler of this._childModelAddedHandlers) {
@@ -115,8 +117,8 @@ class ReactopyaModel {
         return this._childModels[childId + ''];
     }
     start() {
-        if (this._running)
-            return;
+        this._pythonStateStringified = {};
+        this._javaScriptStateStringified = {};
         for (let handler of this._startHandlers)
             handler();
     }

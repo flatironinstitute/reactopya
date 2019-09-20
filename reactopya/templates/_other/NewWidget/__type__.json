@@ -1,4 +1,5 @@
 {
+    "project_name": "{{ project_name }}",
     "type": "{{ NewWidget.type }}",
     "description": "{{ NewWidget.description }}",
     "propsKeys": [],

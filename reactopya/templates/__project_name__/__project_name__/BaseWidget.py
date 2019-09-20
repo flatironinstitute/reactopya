@@ -6,6 +6,7 @@ import logging
 from .reactopyacolabwidget import ReactopyaColabWidget
 from .reactopyaelectronwidget import ReactopyaElectronWidget
 from .init import _get_init_info
+from .host_widget import host_widget
 
 logger = logging.getLogger('reactopya')
 
@@ -87,8 +88,7 @@ class _BaseWidget:
     def _handle_add_child(self, child_id, project_name, type, is_dynamic_child):
         logger.info('WIDGET:%s:_handle_add_child: %s %s %s', self._widget_type, child_id, project_name, type)
         child_id = str(child_id)
-        mod = importlib.import_module(project_name)
-        WIDGET = getattr(mod, type)
+        WIDGET = _get_widget_class_from_type(project_name, type)
         W = WIDGET()
         if is_dynamic_child:
             W._set_dynamic_child(True)
@@ -160,26 +160,39 @@ class _BaseWidget:
         )
 
         self._reactopya_widget.show()
+    
+    def host(self, *, port):
+        print('=== showing props', self._props)
+        host_widget(self._serialize(), port=port)
 
     def run_process_mode(self, dirpath):
+        self._start_process_mode(dirpath)
+        while self._iterate_process_mode():
+            time.sleep(0.01)
+    
+    def _iterate_process_mode(self):
+        try:
+            messages = self._read_messages(self._run_process_mode_dirpath)
+        except:
+            if not os.path.exists(self._run_process_mode_dirpath):
+                # Stopping process because directory no longer exists
+                return False
+            messages = []
+        if len(messages) > 0:
+            for msg in messages:
+                self._handle_message_process_mode(msg)
+        else:
+            self._component.iterate()
+        if self._quit:
+            return False
+        return True
+            
+    def _start_process_mode(self, dirpath):
         self._run_process_mode_dirpath = dirpath
         self._run_process_mode_message_index = 100000
-        import simplejson
-        import select
         self._running_process = True
         self._quit = False
-        # self._component.on_python_state_changed(lambda state: self._handle_python_state_changed(state))
-        while True:
-            messages = self._read_messages(self._run_process_mode_dirpath)
-            if len(messages) > 0:
-                for msg in messages:
-                    self._handle_message_process_mode(msg)
-            else:
-                self._component.iterate()
-            if self._quit:
-                break
-            time.sleep(0.01)
-            # time.sleep(1)
+
     
     def _read_messages(self, dirname):
         import simplejson
@@ -235,12 +248,13 @@ class _BaseWidget:
             print(msg)
             raise Exception('Unexpectected message in _handle_message_process_mode')
 
-    def export_snapshot(self, output_fname, *, format):
+    def export_snapshot(self, output_fname, *, format, use_python_backend_websocket=False):
         import simplejson
         if format is not 'html':
             raise Exception('Unsupported format: {}'.format(format))
         serialized_widget = self._serialize(
             include_javascript_state=True, include_python_state=True, include_bundle_fname=True)
+        print('--- serialized_widget props', serialized_widget.get('props'))
         project_names = _get_all_project_names(serialized_widget)
         project_bundle_fnames = _get_project_bundle_fnames(serialized_widget)
         snapshot = dict(
@@ -305,7 +319,119 @@ let model = create_reactopya_model(sw);
 attach_reactopya_model(sw, model);
 // set_init_state_on_props(sw);
 
-window.reactopya.disable_python_backend = true;
+const verbose = true;
+
+if (([use_python_backend_websocket]) && (window.location.host)) {
+    class WebsocketClient {
+        constructor() {
+            if (verbose) console.info('WebsocketClient constructor');
+            this._validationConfirmed = false;
+            this._connected = false;
+            this._python_processes = {};
+            this._pendingMessages = [];
+            this._messageHandlers = [];
+        }
+        connect(url) {
+            if (verbose) console.info('WebsocketClient connect', url);
+            if ((typeof(window) !== 'undefined') && (window.WebSocket)) {
+                this._ws = new window.WebSocket(url);
+                this._ws.addEventListener('open', () => {
+                    this._connected = true;
+                    this._sendMessage({message_type: 'validation', validation_string: 'reactopya-1'});
+                });
+                this._ws.addEventListener('message', (evt) => {this._handleMessage(evt.data);});
+            }
+            else {
+                console.error('Cannot connect to websocket -- window.WebSocket is not defined');
+            }
+        }
+        send(msg) {
+            if (verbose) console.info('WebsocketClient send', msg);
+            let message = {
+                message_type: 'to_python_process',
+                message: msg
+            }
+            if (this._validationConfirmed) {
+                this._sendMessage(message);
+            }
+            else {
+                this._pendingMessages.push(message);
+            }
+        }
+        onMessage(handler) {
+            this._messageHandlers.push(handler);
+        }
+        _handleMessage(message) {
+            let msg;
+            try {
+                msg = JSON.parse(message);
+            }
+            catch(err) {
+                console.error('Error parsing JSON message.');
+                this._ws.terminate();
+                return;
+            }
+            if (verbose) console.info('WebsocketClient _handleMessage', msg);
+            if (msg.message_type == 'validation_confirmed') {
+                this._validationConfirmed = true;
+                for (let message of this._pendingMessages) {
+                    this._sendMessage(message);
+                }
+                this._pendingMessages = [];
+            }
+            else if (msg.message_type == 'from_python_process') {
+                for (let handler of this._messageHandlers) {
+                    handler(msg.message);
+                }
+            }
+            else {
+                console.error('Unexpected message type in _handleMessage of WebsocketClient: ' + msg.message_type);
+            }
+        }
+        
+        _sendMessage(message) {
+            this._ws.send(JSON.stringify(message));
+        }
+    }
+
+    let client = new WebsocketClient();
+    client.connect('ws://' + window.location.host);
+
+    model.onJavaScriptStateChanged(function(state) {
+        if (verbose) console.info('model.onJavaScriptStateChanged', state);
+        client.send({
+            name: 'setJavaScriptState',
+            state: state
+        });
+    });
+
+    // important that this comes after we have added the initial children to the model
+    model.onChildModelAdded(function(data) {
+        if (verbose) console.info('model.onChildModelAdded', data);
+        client.send({
+            name: 'addChild',
+            data: data
+        });
+    });
+
+    client.onMessage(function(msg) {
+        const name = msg.name;
+        if (name == 'initialize') {
+            //
+        }
+        else if (name == 'setPythonState') {
+            let state = msg.state;
+            if (verbose) console.info('setPythonState', state);
+            model.setPythonState(state);
+        }
+        else {
+            console.error(`Unrecognized message in from websocket client: ${name}`, msg);
+        }
+    });
+}
+else {
+    window.reactopya.python_backend_disabled = true;
+}
 
 document.body.innerHTML=''; // remove the loading message
 var div = document.createElement('div');
@@ -376,6 +502,7 @@ function get_snapshot_json_b64() {
 </html>
         '''
         html = html.replace('[snapshot_json_b64]', base64.b64encode(simplejson.dumps(snapshot, ignore_nan=True).encode('utf-8')).decode())
+        html = html.replace('[use_python_backend_websocket]', 'true' if use_python_backend_websocket else 'false')
         with open(output_fname, 'w') as f:
             f.write(html)
 
@@ -451,3 +578,8 @@ def _json_serialize(x):
 def write_text_file(fname, txt):
     with open(fname, 'w') as f:
         f.write(txt)
+
+def _get_widget_class_from_type(project_name, type):
+    mod = importlib.import_module(project_name)
+    WIDGET = getattr(mod, type)
+    return WIDGET

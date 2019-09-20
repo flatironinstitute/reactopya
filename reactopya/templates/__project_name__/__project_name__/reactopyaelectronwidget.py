@@ -61,6 +61,7 @@ class ReactopyaElectronWidget:
                 widget=widget_spec_fname
             )
         except:
+            self._cleanup()
             raise
         finally:
             self._cleanup()

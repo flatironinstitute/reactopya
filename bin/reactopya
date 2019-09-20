@@ -9,6 +9,7 @@ from reactopya import ShellScript, reactopya_templates_directory
 import reactopya
 from argparse import RawTextHelpFormatter
 import time
+import traceback
 import uuid
 
 
@@ -73,11 +74,6 @@ def main():
             'name': 'install-server',
             'func': _install_server,
             'description': 'Install gallery server'
-        },
-        {
-            'name': 'start-server',
-            'func': _start_server,
-            'description': 'Start gallery server'
         },
         {
             'name': 'list-widgets',
@@ -217,12 +213,11 @@ def _start_gallery_dev(config, args):
 
 
 def _install_server(config, args):
-    _generate(config=config, args=args)
+    _build_bundle(config, args)
     cmd = '''
         #!/bin/bash
         set -ex
-        cd generated/{project_name}_gallery
-        pip install -e .
+        cd generated/{project_name}/{project_name}/host_widget
         yarn install
         yarn build
     '''.format(project_name=config['project_name'])
@@ -234,24 +229,7 @@ def _install_server(config, args):
         raise Exception(
             'Shell script exited with non-zero return code: {}'.format(retcode))
 
-    print('You may now run "reactopya start-server".')
-
-
-def _start_server(config, args):
-    _generate(config=config, args=args)
-    cmd = '''
-        #!/bin/bash
-        set -ex
-        cd generated/{project_name}_gallery
-        yarn start
-    '''.format(project_name=config['project_name'])
-    shell_cmd = ShellScript(cmd)
-    shell_cmd.start()
-    retcode = shell_cmd.wait()
-
-    if retcode != 0:
-        raise Exception(
-            'Shell script exited with non-zero return code: {}'.format(retcode))
+    print('Installed.')
 
 
 def _new_widget(config, args):
@@ -398,8 +376,16 @@ def _watch(config, args):
         if code != watching_code:
             print('reactopya watch: stopping because _watching file has changed or has been removed.')
             return
-        config = _load_config()
-        _generate(config=config, args=args)
+        try:
+            config = _load_config()
+        except:
+            traceback.print_exc()
+            print('Error loading config')
+        try:
+            _generate(config=config, args=args)
+        except:
+            traceback.print_exc()
+            print('Error generating code')
         time.sleep(5)
 
 def _clean(config, args):
@@ -613,7 +599,8 @@ def _write_text_file_if_changed(fname, txt, st_mode):
         print('Writing: {}'.format(fname))
         with open(fname, 'w') as f:
             f.write(txt)
-        os.chmod(fname, st_mode)
+        if st_mode:
+            os.chmod(fname, st_mode)
         return True
     else:
         # print('Unmodified: {}'.format(fname))

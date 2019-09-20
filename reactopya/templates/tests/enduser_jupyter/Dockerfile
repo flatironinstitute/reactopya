@@ -30,8 +30,8 @@ RUN pip install jupyterlab
 #########################################
 ### Install reactopya_jup
 RUN jupyter labextension install @jupyter-widgets/jupyterlab-manager
-RUN pip install --upgrade reactopya_jup==0.7.1
-RUN jupyter labextension install reactopya_jup@0.7.1
+RUN pip install --upgrade reactopya_jup==0.7.2
+RUN jupyter labextension install reactopya_jup@0.7.2
 RUN pip install ipywidgets
 RUN jupyter nbextension install --sys-prefix --py reactopya_jup
 RUN jupyter nbextension enable reactopya_jup --py --sys-prefix

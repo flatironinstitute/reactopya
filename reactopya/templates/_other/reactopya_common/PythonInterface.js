@@ -6,7 +6,7 @@ export default class PythonInterface {
         this._reactComponent = reactComponent;
         this._projectName = config.project_name;
         this._type = config.type;
-        this._syncPythonStateToStateKeys = config.pythonStateKeys;
+        // this._syncPythonStateToStateKeys = config.pythonStateKeys;
         this._syncStateToJavaScriptStateKeys = config.javaScriptStateKeys;
         // this._pythonProcess = null;
         this._pythonState = {};
@@ -29,7 +29,6 @@ export default class PythonInterface {
         }
     }
     start() {
-        this._setComponentStateFromModel(); // this is important for snapshots (static html exports)
         if (this._reactopyaModel) {
             this._reactopyaModel.onPythonStateChanged((state) => {
                 this._reactComponent.setState(state);
@@ -46,6 +45,7 @@ export default class PythonInterface {
                 this._pendingJavaScriptState = {};
             }
         }
+        this._setComponentStateFromModel(); // this is important for snapshots (static html exports)
         this.update();
     }
     stop() {
@@ -142,7 +142,7 @@ export default class PythonInterface {
     _copyStateToJavaScriptState() {
         let newState = {};
         for (let key of this._syncStateToJavaScriptStateKeys) {
-            if (!compare(this.getJavaScriptState[key], this._reactComponent.state[key])) {
+            if (!compare(this.getJavaScriptState(key), this._reactComponent.state[key])) {
                 newState[key] = clone(this._reactComponent.state[key]);
             }
         }

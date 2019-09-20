@@ -71,7 +71,14 @@ function ReactopyaPythonProcess(projectName, type, initialChildren, props, onRec
         */
     }
     this.sendMessage = function (msg) {
-        writeMessage(m_tmpDir.name, msg);
+        try {
+            writeMessage(m_tmpDir.name, msg);
+        }
+        catch(err) {
+            if (fs.existsSync(m_tmpDir.name)) {
+                console.warn('Problem writing message', msg);
+            }
+        }
         // try {
         //     m_process.stdin.write(JSON.stringify(msg) + '\n');
         // }
@@ -81,11 +88,11 @@ function ReactopyaPythonProcess(projectName, type, initialChildren, props, onRec
         // }
     }
     this.stop = function() {
+        that.sendMessage({name: "quit"});
         // remove the temporary directory
         if (fs.existsSync(m_tmpDir.name)) {
             deleteFolderRecursive(m_tmpDir.name);
         }
-        that.sendMessage({name: "quit"});
     }
 }
 
@@ -97,25 +104,34 @@ function MessageReader(dirpath) {
 
     function checkForMessages() {
         let messageFiles = [];
-        fs.readdirSync(dirpath).forEach(function(file) {
-            if (file.endsWith('.msg-from-python')) {
-                messageFiles.push(file);
+        try {
+            fs.readdirSync(dirpath).forEach(function(file) {
+                if (file.endsWith('.msg-from-python')) {
+                    messageFiles.push(file);
+                }
+            });
+            messageFiles.sort();
+            for (let msgFile of messageFiles) {
+                let msg = read_json_file(`${dirpath}/${msgFile}`);
+                fs.unlinkSync(`${dirpath}/${msgFile}`)
+                for (let cb of m_message_callbacks) {
+                    cb(msg);
+                }
+                break; // only one at a time for now
             }
-        });
-        messageFiles.sort();
-        for (let msgFile of messageFiles) {
-            let msg = read_json_file(`${dirpath}/${msgFile}`);
-            fs.unlinkSync(`${dirpath}/${msgFile}`)
-            for (let cb of m_message_callbacks) {
-                cb(msg);
-            }
-            break; // only one at a time for now
         }
+        catch(err) {
+            if (!fs.existsSync(dirpath)) {
+                return false;
+            }
+            console.warn('Problem checking for messages.', dirpath, err);
+        }
+        return true;
     }
 
     function nextCheck() {
         setTimeout(function() {
-            checkForMessages();
+            if (!checkForMessages()) return;
             nextCheck();
         }, 100);
     }
@@ -144,7 +160,8 @@ function write_json_file(fname, x) {
 }
 
 function write_text_file(fname, txt) {
-    fs.writeFileSync(fname, txt);
+    fs.writeFileSync(fname + '.tmp', txt);
+    fs.renameSync(fname + '.tmp', fname);
 }
 
 var deleteFolderRecursive = function(path) {

@@ -86,6 +86,7 @@ class ReactopyaServer {
         this._wss.on('connection', (ws) => {
             let id = this._last_connection_id + 1;
             let X = new IncomingConnection(id, ws);
+            this._last_connection_id = id;
             this._connections[id] = X;
         });
         if (this._port) {
