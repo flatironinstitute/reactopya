@@ -52,7 +52,7 @@ class ReactopyaJupyterWidget(widgets.DOMWidget):
         ))
 
         display(self)
-    
+
     def set_python_state(self, state):
         logger.info('ReactopyaJupyterWidget:set_python_state for %s', self._m_type)
         self.send(dict(

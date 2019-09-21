@@ -2,9 +2,5 @@
     "project_name": "{{ project_name }}",
     "type": "{{ NewWidget.type }}",
     "description": "{{ NewWidget.description }}",
-    "propsKeys": [],
-    "javaScriptStateKeys": [],
-    "pythonStateKeys": ["status", "status_message"],
-    "galleryProps": {
-    }
+    "defaultProps": {}
 }

@@ -6,9 +6,6 @@ export default class PythonInterface {
         this._reactComponent = reactComponent;
         this._projectName = config.project_name;
         this._type = config.type;
-        // this._syncPythonStateToStateKeys = config.pythonStateKeys;
-        this._syncStateToJavaScriptStateKeys = config.javaScriptStateKeys;
-        // this._pythonProcess = null;
         this._pythonState = {};
         this._javaScriptState = {};
         this._pendingJavaScriptState = {};
@@ -46,23 +43,16 @@ export default class PythonInterface {
             }
         }
         this._setComponentStateFromModel(); // this is important for snapshots (static html exports)
-        this.update();
     }
     stop() {
         if (this._reactopyaModel) {
             this._reactopyaModel.stop();
         }
     }
-    update() {
-        this._copyStateToJavaScriptState();
+    setState(state) {
+        this.setJavaScriptState(state);
     }
     setJavaScriptState(state) {
-        // if ((!this._reactopyaModel) && (!this._pythonProcess)) {
-        //     for (let key in state) {
-        //         this._pendingJavaScriptState[key] = state[key];
-        //     }
-        //     return;
-        // }
         let newJavaScriptState = {};
         for (let key in state) {
             if (!compare(state[key], this._javaScriptState[key])) {
@@ -71,15 +61,10 @@ export default class PythonInterface {
             }
         }
         if (Object.keys(newJavaScriptState).length > 0) {
+            this._reactComponent.setState(newJavaScriptState);
             if (this._reactopyaModel) {
                 this._reactopyaModel.setJavaScriptState(newJavaScriptState);
             }
-            // else if (this._pythonProcess) {
-            //     this._pythonProcess.sendMessage({
-            //         name: 'setJavaScriptState',
-            //         state: newJavaScriptState
-            //     });
-            // }
             else {
                 console.error('Problem in setJavaScriptState: unable to find one of: this.reactopyaModel, props.reactopyaModel');
             }
@@ -98,56 +83,11 @@ export default class PythonInterface {
         }
         else return undefined;
     }
-
-    // _handleReceiveMessageFromProcess = (msg) => {
-    //     if (msg.name == 'setPythonState') {
-    //         let somethingChanged = false;
-    //         for (let key in msg.state) {
-    //             if (!compare(msg.state[key], this._pythonState[key])) {
-    //                 this._pythonState[key] = clone(msg.state[key]);
-    //                 somethingChanged = true;
-    //             }
-    //         }
-    //         if (somethingChanged) {
-    //             this._copyPythonStateToState(this._syncPythonStateToStateKeys);
-    //         }
-    //     }
-    // }
-
-    _copyPythonStateToState(keys) {
-        let newState = {};
-        for (let key of keys) {
-            if (!compare(this._pythonState[key], this._reactComponent.state[key])) {
-                newState[key] = clone(this._pythonState[key]);
-            }
-        }
-        this._reactComponent.setState(newState);
-    }
     _setComponentStateFromModel() {
         // important for html snapshots
-        let newState = {};
         if (this._reactopyaModel) {
-            let javaScriptState = this._reactopyaModel.getJavaScriptState();
-            for (let key in javaScriptState) {
-                newState[key] = javaScriptState[key];
-            }
-
-            let pythonState = this._reactopyaModel.getPythonState();
-            for (let key in pythonState) {
-                newState[key] = pythonState[key];
-            }
-        }
-        this._reactComponent.setState(newState);
-    }
-    _copyStateToJavaScriptState() {
-        let newState = {};
-        for (let key of this._syncStateToJavaScriptStateKeys) {
-            if (!compare(this.getJavaScriptState(key), this._reactComponent.state[key])) {
-                newState[key] = clone(this._reactComponent.state[key]);
-            }
-        }
-        if (Object.keys(newState).length > 0) {
-            this.setJavaScriptState(newState);
+            this.setState(this._reactopyaModel.getJavaScriptState());
+            this._reactComponent.setState(this._reactopyaModel.getPythonState());
         }
     }
 }

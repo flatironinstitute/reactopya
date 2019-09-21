@@ -7,6 +7,7 @@ from .reactopyacolabwidget import ReactopyaColabWidget
 from .reactopyaelectronwidget import ReactopyaElectronWidget
 from .init import _get_init_info
 from .host_widget import host_widget
+from .reactopyacomponent import ReactopyaComponent
 
 logger = logging.getLogger('reactopya')
 
@@ -22,7 +23,7 @@ class _BaseWidget:
             self._children[str(i)] = ch
             self._child_ids.append(str(i))
         self._connect_children(self._children)
-        self._component = WidgetOrig()
+        self._component = ReactopyaComponent(WidgetOrig)
         self._component.on_python_state_changed(
             lambda state: self._handle_python_state_changed(state))
         self._reactopya_widget = None
@@ -446,22 +447,6 @@ window.reactopya.widgets[sw.project_name][sw.type].render(
         fullBrowser: true
     }
 );
-
-/*
-function set_init_state_on_props(serialized_widget) {
-    let init_state = {};
-    for (let key in serialized_widget.javascript_state) {
-        init_state[key] = serialized_widget.javascript_state[key];
-    }
-    for (let key in serialized_widget.python_state) {
-        init_state[key] = serialized_widget.python_state[key];
-    }
-    serialized_widget.props.reactopya_init_state = init_state;
-    for (let child of serialized_widget.children) {
-        set_init_state_on_props(child);
-    }
-}
-*/
 
 function create_reactopya_model(serialized_widget) {
     let ret = new ReactopyaModel(serialized_widget.project_name, serialized_widget.type);

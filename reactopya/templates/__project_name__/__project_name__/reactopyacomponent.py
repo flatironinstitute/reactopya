@@ -1,23 +1,23 @@
 from abc import abstractmethod
 from copy import deepcopy
-import sys
-import select
-import json
 import time
 import numpy as np
-import simplejson
 
-class Component:
-    def __init__(self):
+class ReactopyaComponent:
+    def __init__(self, Widget):
         self._python_state = dict()
         self._python_state_changed_handlers = []
         self._javascript_state = dict()
         self._quit = False
         self._running_process = False
+        self._widget_instance = Widget()
+        setattr(self._widget_instance, 'set_state', self.set_state)
+        setattr(self._widget_instance, 'set_python_state', self.set_python_state)
+        setattr(self._widget_instance, 'get_python_state', self.get_python_state)
+        setattr(self._widget_instance, 'get_javascript_state', self.get_javascript_state)
 
-    @abstractmethod
     def javascript_state_changed(self, prev_state, new_state):
-        pass
+        self._widget_instance.javascript_state_changed(prev_state, new_state)
     
     def set_state(self, state):
         self.set_python_state(state)
@@ -40,7 +40,8 @@ class Component:
         return deepcopy(self._python_state.get(key, default_val))
 
     def iterate(self):
-        pass
+        if hasattr(self._widget_instance, 'iterate'):
+            self._widget_instance.iterate()
 
     def on_python_state_changed(self, handler):
         self._python_state_changed_handlers.append(handler)

@@ -11,7 +11,6 @@ setuptools.setup(
     scripts=['bin/{{ project_name }}'],
     include_package_data=True,
     install_requires=[
-        'reactopya',
         'simplejson',
         {% for value in setup_py.install_requires -%}
         '{{ value }}'{%- if not loop.last %},{% endif %}
