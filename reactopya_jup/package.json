@@ -1,6 +1,6 @@
 {
     "name": "reactopya_jup",
-    "version": "0.7.3",
+    "version": "0.7.4",
     "description": "Reactopya JupyterLab extension",
     "author": "Jeremy Magland",
     "license": "Apache-2.0",
