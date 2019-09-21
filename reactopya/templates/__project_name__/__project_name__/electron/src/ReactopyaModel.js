@@ -116,8 +116,9 @@ class ReactopyaModel {
         return this._childModels[childId + ''];
     }
     start() {
-        this._pythonStateStringified = {};
-        this._javaScriptStateStringified = {};
+        // the following two lines would mess up html snapshots
+        // this._pythonStateStringified = {};
+        // this._javaScriptStateStringified = {};
         for (let handler of this._startHandlers)
             handler();
     }
