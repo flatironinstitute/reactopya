@@ -74,7 +74,7 @@ class _BaseWidget:
         os.rename(msg_path + '.tmp', msg_path)
 
     def _handle_javascript_state_changed(self, state):
-        logger.info('WIDGET:%s:_handle_javascript_state_changed: %s', self._widget_type, state)
+        logger.info('WIDGET:%s:_handle_javascript_state_changed: %s %s', self._widget_type, state, self._children.keys())
         if '_childId' in state:
             child_id = str(state['_childId'])
             if child_id in self._children:
@@ -87,7 +87,7 @@ class _BaseWidget:
         self._component._handle_javascript_state_changed(state)
     
     def _handle_add_child(self, child_id, project_name, type, is_dynamic_child):
-        logger.info('WIDGET:%s:_handle_add_child: %s %s %s', self._widget_type, child_id, project_name, type)
+        logger.info('WIDGET:%s:_handle_add_child: child_id=%s project_name=%s type=%s', self._widget_type, child_id, project_name, type)
         child_id = str(child_id)
         WIDGET = _get_widget_class_from_type(project_name, type)
         W = WIDGET()
@@ -96,6 +96,7 @@ class _BaseWidget:
         self._connect_child(child_id, W)
         self._children[str(child_id)] = W
         self._child_ids.append(str(child_id))
+        logger.info('WIDGET:%s:_handle_add_child finished: child_id=%s project_name=%s type=%s', self._widget_type, child_id, project_name, type)
         return W
 
     def _serialize(self, include_javascript_state=False, include_python_state=False, include_bundle_fname=False, child_id=''):
@@ -163,7 +164,6 @@ class _BaseWidget:
         self._reactopya_widget.show()
     
     def host(self, *, port):
-        print('=== showing props', self._props)
         host_widget(self._serialize(), port=port)
 
     def run_process_mode(self, dirpath):
@@ -319,7 +319,7 @@ let model = create_reactopya_model(sw);
 attach_reactopya_model(sw, model);
 // set_init_state_on_props(sw);
 
-const verbose = true;
+const verbose = false;
 
 if (([use_python_backend_websocket]) && (window.location.host)) {
     class WebsocketClient {

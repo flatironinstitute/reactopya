@@ -67,6 +67,7 @@ class ChildWrapper extends Component {
 }
  
 function _create_element(type, children, props, key, reactopyaModel, opts) {
+    console.log(widgetsByType);
     children = children || [];
     props = props || {};
     key = key || undefined;

@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from copy import deepcopy
-import time
+import sys
 import numpy as np
 
 class ReactopyaComponent:
@@ -19,6 +19,12 @@ class ReactopyaComponent:
     def javascript_state_changed(self, prev_state, new_state):
         self._widget_instance.javascript_state_changed(prev_state, new_state)
     
+    def get_data_WIP(self, request, response):
+        if hasattr(self._widget_instance, 'get_data'):
+            self._widget_instance.get_data_WIP(request, response)
+        else:
+            raise Exception('Widget has no method: get_data_WIP')
+    
     def set_state(self, state):
         self.set_python_state(state)
 
@@ -32,6 +38,7 @@ class ReactopyaComponent:
                 self._python_state[key] = changed_state[key]
             for handler in self._python_state_changed_handlers:
                 handler(changed_state)
+        sys.stdout.flush()
     
     def get_javascript_state(self, key):
         return deepcopy(self._javascript_state.get(key))
@@ -48,6 +55,7 @@ class ReactopyaComponent:
 
     def _initial_update(self):
         self.javascript_state_changed(deepcopy(self._javascript_state), deepcopy(self._javascript_state))
+        sys.stdout.flush()
 
     def _handle_javascript_state_changed(self, state):
         changed_state = dict()
@@ -59,6 +67,7 @@ class ReactopyaComponent:
             for key in changed_state:
                 self._javascript_state[key] = changed_state[key]
             self.javascript_state_changed(prev_javascript_state, deepcopy(self._javascript_state))
+            sys.stdout.flush()
 
 
 def _different(a, b):

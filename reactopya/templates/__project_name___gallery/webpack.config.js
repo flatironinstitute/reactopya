@@ -67,7 +67,8 @@ module.exports.push({
         rules: rules
     },
     resolve: {
-        extensions: ['.css', '.js', '.json', '.png', '.gif', '.jpg', '.svg'],
+        // using css here caused a problem!
+        extensions: ['.js', '.json', '.png', '.gif', '.jpg', '.svg'],
         alias: {
             'react-dom': '@hot-loader/react-dom',
             'reactopya': __dirname + '/reactopya_common'

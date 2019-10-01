@@ -97,6 +97,7 @@ export default class MainWindow extends Component {
             }
         }
         for (let a of gallery_widgets) {
+            window.allWidgets = allWidgets;
             widgets.push({
                 project_name: a.project_name || allWidgets[a.type].reactopyaConfig.project_name,
                 type: a.type,
@@ -132,8 +133,8 @@ export default class MainWindow extends Component {
         }
         let item_sizes = {
             xs: 12,
-            md: 6,
-            xl: 4
+            md: 12,
+            xl: 12
         };
         let expandOrCollapseIcon = null;
         if (expandedWidget) {

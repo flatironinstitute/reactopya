@@ -8,7 +8,8 @@
         "{{ project_name }}"
     ],
     "scripts": {
-        "build": "webpack && mkdir -p ../{{ project_name }}/{{ project_name}}/dist && cp dist/bundle.js ../{{ project_name }}/{{ project_name }}/dist/bundle.js"
+        "build": "webpack --mode production && mkdir -p ../{{ project_name }}/{{ project_name}}/dist && cp dist/bundle.js ../{{ project_name }}/{{ project_name }}/dist/bundle.js",
+        "build-dev": "webpack --mode development && mkdir -p ../{{ project_name }}/{{ project_name}}/dist && cp dist/bundle.js ../{{ project_name }}/{{ project_name }}/dist/bundle.js"
     },
     "dependencies": {
         "json-stable-stringify": "^1.0.1",

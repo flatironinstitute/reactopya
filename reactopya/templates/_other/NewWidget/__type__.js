@@ -19,9 +19,6 @@ export default class {{ NewWidget.type }} extends Component {
         this.pythonInterface = new PythonInterface(this, config);
         this.pythonInterface.start();
     }
-    componentDidUpdate() {
-        this.pythonInterface.update();
-    }
     componentWillUnmount() {
         this.pythonInterface.stop();
     }

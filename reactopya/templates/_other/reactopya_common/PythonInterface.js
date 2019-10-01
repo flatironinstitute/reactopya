@@ -12,16 +12,37 @@ export default class PythonInterface {
         this._reactopyaModel = reactComponent.reactopyaModel || reactComponent.props.reactopyaModel;
         if ((!this._reactopyaModel) && (reactComponent.props.reactopyaParent)) {
             let parent = reactComponent.props.reactopyaParent;
-            let parentModel = parent.reactopyaModel || parent.props.reactopyaModel;
-            let childId = reactComponent.props.reactopyaChildId;
-            if (childId) {
-                let isDynamic = true;
-                let model = parentModel.addChild(childId, this._projectName, this._type, isDynamic);
-                reactComponent.reactopyaModel = model; // i don't think we can set the props here
-                this._reactopyaModel = model;    
+            let parentModel = null;
+            // the following is tricky, but handles some sitations where parents appear as grandparents
+            while (true) {
+                parentModel = (parent.reactopyaModel) || (parent.props.reactopyaModel);
+                if (parentModel) {
+                    break;
+                }
+                else {
+                    if (parent.props.reactopyaParent) {
+                        parent = parent.props.reactopyaParent;
+                        // now we try again
+                    }
+                    else {
+                        break;
+                    }
+                }
+            }
+            if (parentModel) {
+                let childId = reactComponent.props.reactopyaChildId;
+                if (childId) {
+                    let isDynamic = true;
+                    let model = parentModel.addChild(childId, this._projectName, this._type, isDynamic);
+                    reactComponent.reactopyaModel = model; // i don't think we can set the props here
+                    this._reactopyaModel = model;    
+                }
+                else {
+                    console.error('Missing prop: childId');
+                }
             }
             else {
-                console.error('Missing prop: childId');
+                console.error(`Parent of ${this._type} does not have a reactopya model`, reactComponent, parent);
             }
         }
     }
