@@ -1,5 +1,5 @@
 {
-  "name": "{{ project_name }}_gallery_electron",
+  "name": "{{ project_name }}_dev_electron",
   "version": "0.1.0",
   "main": "src/index.js",
   "author": "Jeremy Magland",

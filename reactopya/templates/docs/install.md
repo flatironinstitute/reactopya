@@ -127,15 +127,17 @@ cd [directory-of-the-repo]
 
 **Electron development mode**
 
-This following is the best way to develop the widgets
+This following is the best way to develop the widgets.
+
+First create a file called dev_widget.json in the root directory containing the information about the widget you want to develop.
 
 ```
 # you only need to run this once:
-reactopya install-gallery-dev
+reactopya install-dev
 
-# The following will open the gallery of widgets in development mode
+# The following will open a widget in development mode
 # with hot module reloading whenever the source code changes
-reactopya start-gallery-dev
+reactopya start-dev
 ```
 
 **JupyterLab and Jupyter Notebook (development installation)**

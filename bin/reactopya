@@ -51,14 +51,14 @@ def main():
             'description': 'Perform all installation steps',
         },
         {
-            'name': 'install-gallery-dev',
-            'func': _install_gallery_dev,
-            'description': 'Installation step prior to running start-gallery-dev',
+            'name': 'install-dev',
+            'func': _install_dev,
+            'description': 'Installation step prior to running start-dev',
         },
         {
-            'name': 'start-gallery-dev',
-            'func': _start_gallery_dev,
-            'description': 'Start the electron gallery application in development mode (use install-gallery-dev first). This also calls "reactopya watch" in the background.'
+            'name': 'start-dev',
+            'func': _start_dev,
+            'description': 'Start the electron application in development mode (use install-dev first). This also calls "reactopya watch" in the background.'
         },
         {
             'name': 'install-jupyter',
@@ -140,13 +140,11 @@ def _init_project(args):
     with open('package.json', 'w') as f:
         json.dump(package_json, f, indent=4)
     
-    gallery_json = {
-        "widgets": [
-
-        ]
+    dev_widget_json = {
+        widget: ''
     }
-    with open('gallery.json', 'w') as f:
-        json.dump(gallery_json, f, indent=4)
+    with open('dev_widget.json', 'w') as f:
+        json.dump(dev_widget_json, f, indent=4)
 
     # template_dir =
     # _generate_directory(os.path.join(reactopya_templates_directory(), '_other', 'widgets', ))
@@ -163,12 +161,12 @@ def _list_widgets(config, args):
         print(w['type'])
 
 
-def _install_gallery_dev(config, args):
+def _install_dev(config, args):
     _generate(config=config, args=args)
     cmd = '''
         #!/bin/bash
         set -ex
-        cd generated/{project_name}_gallery
+        cd generated/{project_name}_dev
         yarn install
         yarn install-electron
         cd ../{project_name}
@@ -182,10 +180,10 @@ def _install_gallery_dev(config, args):
         raise Exception(
             'Shell script exited with non-zero return code: {}'.format(retcode))
 
-    print('You may now run "reactopya start-gallery-dev".')
+    print('You may now run "reactopya start-dev".')
 
 
-def _start_gallery_dev(config, args):
+def _start_dev(config, args):
     _generate(config=config, args=args)
 
     watch_cmd = ShellScript('''
@@ -198,7 +196,7 @@ def _start_gallery_dev(config, args):
         cmd = '''
             #!/bin/bash
             set -ex
-            cd generated/{project_name}_gallery
+            cd generated/{project_name}_dev
             yarn electron-dev
         '''.format(project_name=config['project_name'])
         shell_cmd = ShellScript(cmd)
@@ -271,7 +269,7 @@ def _append_text_file(fname, txt):
     _write_text_file_if_changed(fname, txt2, None)
 
 def _install_all(config, args):
-    _install_gallery_dev(config, args)
+    _install_dev(config, args)
     _install_jupyter(config, args)
     _install_server(config, args)
 
@@ -369,9 +367,9 @@ def _load_config():
     with open('reactopya.config.json', 'r') as f:
         config = json.load(f)
 
-    if os.path.exists('gallery.json'):
-        with open('gallery.json', 'r') as f:
-            config['gallery_widgets'] = json.load(f).get('widgets', [])
+    if os.path.exists('dev_widget.json'):
+        with open('dev_widget.json', 'r') as f:
+            config['dev_widget'] = json.load(f).get('widget', '')
 
     if 'package_json' not in config:
         config['package_json'] = {}
@@ -399,7 +397,7 @@ def _load_config():
 
 
 def _read_reactopya_model_code():
-    path = os.path.join(reactopya_templates_directory(), '__project_name___gallery', 'src', 'components', 'ReactopyaModel.js')
+    path = os.path.join(reactopya_templates_directory(), '__project_name___dev', 'src', 'components', 'ReactopyaModel.js')
     with open(path, 'r') as f:
         txt = f.read()
     lines = txt.splitlines(keepends=True)

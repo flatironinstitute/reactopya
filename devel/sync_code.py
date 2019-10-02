@@ -4,7 +4,7 @@ import os
 
 def main():
     dirname = os.path.dirname(os.path.realpath(__file__))
-    src_path = os.path.join(dirname, '..', 'reactopya', 'templates', '__project_name___gallery', 'src', 'components', 'ReactopyaModel.js')
+    src_path = os.path.join(dirname, '..', 'reactopya', 'templates', '__project_name___dev', 'src', 'components', 'ReactopyaModel.js')
     dst_path1 = os.path.join(dirname, '..', 'reactopya_jup', 'lib', 'ReactopyaModel.js')
     dst_path2 = os.path.join(dirname, '..', 'reactopya', 'templates', '__project_name__', '__project_name__', 'electron', 'src', 'ReactopyaModel.js')
 
