@@ -121,7 +121,7 @@ class ElectronProcess:
 
         shell_cmd = ShellScript('''
         #!/bin/bash
-        electron {electron_src} {command} {args} --message_dir {message_dir}
+        electron --no-sandbox {electron_src} --command {command} {args} --message_dir {message_dir}
         '''.format(electron_src=electron_src, command=command, args=' '.join(args), message_dir=message_dir))
         shell_cmd.start()
         while True:
