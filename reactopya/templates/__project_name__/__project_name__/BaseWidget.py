@@ -3,6 +3,7 @@ import os
 import importlib
 import time
 import logging
+import uuid
 from .reactopyacolabwidget import ReactopyaColabWidget
 from .reactopyaelectronwidget import ReactopyaElectronWidget
 from .init import _get_init_info
@@ -16,7 +17,7 @@ class _BaseWidget:
     def __init__(self, WidgetOrig, widget_type, project_name, *args, **kwargs):
         self._project_name = project_name
         self._widget_type = widget_type
-        self._props = dict(**kwargs)
+        self._props = _json_serialize(dict(**kwargs))
         self._children = {}
         self._child_ids = []
         for i, ch in enumerate(list(args)):
@@ -74,6 +75,10 @@ class _BaseWidget:
         os.rename(msg_path + '.tmp', msg_path)
 
     def _handle_javascript_state_changed(self, state):
+        for key in state:
+            val = state[key]
+            if (type(val) == str) and (val.startswith('@reactopya-python-object@')):
+                state[key] = _object_registry['objects'][val]
         logger.info('WIDGET:%s:_handle_javascript_state_changed: %s %s', self._widget_type, state, self._children.keys())
         if '_childId' in state:
             child_id = str(state['_childId'])
@@ -537,6 +542,9 @@ def _listify_ndarray(x):
     else:
         raise Exception('Cannot listify ndarray with {} dims.'.format(x.ndim))
 
+_object_registry = dict(
+    objects=dict()
+)
 
 def _json_serialize(x):
     import numpy as np
@@ -556,8 +564,21 @@ def _json_serialize(x):
         for i, val in enumerate(x):
             ret.append(_json_serialize(val))
         return ret
-    else:
+    elif _is_jsonable(x):
         return x
+    else:
+        code = '@reactopya-python-object@' + uuid.uuid4().hex.upper()
+        _object_registry['objects'][code] = x
+        return code
+
+
+def _is_jsonable(x):
+    import simplejson
+    try:
+        simplejson.dumps(x)
+        return True
+    except:
+        return False
 
 def write_text_file(fname, txt):
     with open(fname, 'w') as f:
