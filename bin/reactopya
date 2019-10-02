@@ -584,7 +584,6 @@ def _write_binary_file_if_changed(fname, data, st_mode):
     else:
         data_existing = None
         st_mode_existing = None
-    print('======', fname, st_mode, st_mode_existing)
     if (data != data_existing) or (st_mode != st_mode_existing):
         print('Writing: {}'.format(fname))
         with open(fname, 'wb') as f:

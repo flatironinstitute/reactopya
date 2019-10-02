@@ -16,4 +16,7 @@ class {{ widget.type }}(_BaseWidget):
     def __init__(self, *args, **kwargs):
         super().__init__({{ widget.type }}Orig, '{{ widget.type }}', '{{ project_name }}', *args, **kwargs)
 
+if hasattr({{ widget.type }}Orig, 'examples'):
+    setattr({{ widget.type }}, 'examples', {{ widget.type }}Orig.examples)
+
 {% endfor %}
