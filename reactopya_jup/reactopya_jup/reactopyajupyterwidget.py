@@ -30,6 +30,7 @@ class ReactopyaJupyterWidget(widgets.DOMWidget):
         self._m_type = type
         self._m_children = dict()
         self._child_ids = []
+        self._initialized = False
         for child_id, ch in enumerate(initial_children):
             self._m_children[str(child_id)] = ch
             self._child_ids.append(child_id)
@@ -45,13 +46,20 @@ class ReactopyaJupyterWidget(widgets.DOMWidget):
         self.set_trait('_key', key)
         self.on_msg(self._handle_message)
 
-    def show(self):
+    def show(self, render=True):
         # does sending this message belong here?
-        self.send(dict(
-            name='initialize'
-        ))
+        self._initialize_if_needed()
+        if render:
+            display(self)
+        else:
+            return self
 
-        display(self)
+    def _initialize_if_needed(self):
+        if not self._initialized:
+            self.send(dict(
+                name='initialize'
+            ))            
+            self._initialized = True
 
     def set_python_state(self, state):
         logger.info('ReactopyaJupyterWidget:set_python_state for %s', self._m_type)

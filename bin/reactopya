@@ -71,6 +71,11 @@ def main():
             'description': 'Build or rebuild the javascript bundle for this project without installing dependencies'
         },
         {
+            'name': 'build-bundle-dev',
+            'func': _build_bundle_dev,
+            'description': 'Same has build-bundle except using development mode for webpack (--mode development)'
+        },
+        {
             'name': 'publish-pypi',
             'func': _publish_pypi,
             'description': 'Publish generated python package to PiPI'
@@ -305,6 +310,23 @@ def _build_bundle(config, args):
         cd generated/{project_name}_bundle
         echo "======================================= BUNDLE BUILD ======================================="
         yarn build
+    '''.format(project_name=config['project_name'])
+    shell_cmd = ShellScript(cmd)
+    shell_cmd.start()
+    retcode = shell_cmd.wait()
+
+    if retcode != 0:
+        raise Exception(
+            'Shell script exited with non-zero return code: {}'.format(retcode))
+
+def _build_bundle_dev(config, args):
+    _generate(config=config, args=args)
+    cmd = '''
+        #!/bin/bash
+        set -ex
+        cd generated/{project_name}_bundle
+        echo "======================================= BUNDLE BUILD ======================================="
+        yarn build-dev
     '''.format(project_name=config['project_name'])
     shell_cmd = ShellScript(cmd)
     shell_cmd.start()

@@ -136,7 +136,7 @@ class _BaseWidget:
     def _reactopya_widget(self):
         return self._reactopya_widget
 
-    def show(self):
+    def show(self, **kwargs):
         init_info = _get_init_info()
         if init_info['mode'] == 'jupyter':
             from reactopya_jup import ReactopyaJupyterWidget
@@ -166,7 +166,7 @@ class _BaseWidget:
             self._handle_add_child_data
         )
 
-        self._reactopya_widget.show()
+        return self._reactopya_widget.show(**kwargs)
     
     def host(self, *, port):
         host_widget(self._serialize(), port=port)

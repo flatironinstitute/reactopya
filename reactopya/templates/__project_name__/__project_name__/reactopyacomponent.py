@@ -54,21 +54,34 @@ class ReactopyaComponent:
         self._python_state_changed_handlers.append(handler)
 
     def _initial_update(self):
-        self.javascript_state_changed(deepcopy(self._javascript_state), deepcopy(self._javascript_state))
+        self.javascript_state_changed(deepcopy2(self._javascript_state), deepcopy2(self._javascript_state))
         sys.stdout.flush()
 
     def _handle_javascript_state_changed(self, state):
         changed_state = dict()
         for key in state:
             if _different(state[key], self._javascript_state.get(key)):
-                changed_state[key] = deepcopy(state[key])
+                changed_state[key] = deepcopy2(state[key])
         if changed_state:
-            prev_javascript_state = deepcopy(self._javascript_state)
+            prev_javascript_state = deepcopy2(self._javascript_state)
             for key in changed_state:
                 self._javascript_state[key] = changed_state[key]
-            self.javascript_state_changed(prev_javascript_state, deepcopy(self._javascript_state))
+            self.javascript_state_changed(prev_javascript_state, deepcopy2(self._javascript_state))
             sys.stdout.flush()
 
+def deepcopy2(x):
+    if isinstance(x, dict):
+        ret = dict()
+        for key, val in x.items():
+            ret[key] = deepcopy2(val)
+        return ret
+    elif isinstance(x, list):
+        ret = []
+        for val in x:
+            ret.append(deepcopy2(val))
+        return ret
+    else:
+        return x
 
 def _different(a, b):
     return a is not b
