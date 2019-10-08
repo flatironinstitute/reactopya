@@ -146,7 +146,7 @@ def _init_project(args):
         json.dump(package_json, f, indent=4)
     
     dev_widget_json = {
-        widget: ''
+        "widget": {}
     }
     with open('dev_widget.json', 'w') as f:
         json.dump(dev_widget_json, f, indent=4)

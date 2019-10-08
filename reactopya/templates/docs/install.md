@@ -23,7 +23,11 @@ Then, depending on how you intend to use the library, use one or more of the fol
 
 To use {{ project_name }} within JupyterLab and in Jupyter Notebook you will first need to install the reactopya_jup notebook extension.
 
-As a prerequisite (for JupyterLab) you need the ipywidgets lab extension:
+As a prerequisite (for JupyterLab) you need the ipywidgets lab extension.
+
+You will need to first install jupyterlab unless you have it from a different place: `pip install jupyterlab`
+
+Then install the extension (from npm):
 
 ```
 jupyter labextension install @jupyter-widgets/jupyterlab-manager
