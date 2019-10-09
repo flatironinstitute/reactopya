@@ -161,8 +161,8 @@ class FullBrowser extends Component {
         if (!width) width = 300;
         if (!height) height = 300;
         let new_props = {
-            width: width,
-            height: height
+            width: width - 20, // leave room for scroll bar
+            height: height - 20 // leave room for scroll bar
         };
         for (let key in elmt.props) {
             new_props[key] = elmt.props[key];
