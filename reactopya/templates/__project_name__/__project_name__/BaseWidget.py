@@ -4,6 +4,7 @@ import importlib
 import time
 import logging
 import uuid
+import numpy as np
 from .reactopyacolabwidget import ReactopyaColabWidget
 from .reactopyaelectronwidget import ReactopyaElectronWidget
 from .init import _get_init_info
@@ -145,6 +146,8 @@ class _BaseWidget:
             RW = ReactopyaColabWidget
         elif init_info['mode'] == 'electron':
             RW = ReactopyaElectronWidget
+        else:
+            raise Exception('You need to initialize {{ project_name }} via one of the following: init_jupyter() or init_electron()')
         self._reactopya_widget = RW(
             project_name=self._project_name,
             type=self._widget_type,
