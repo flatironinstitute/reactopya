@@ -26,15 +26,13 @@ class ReactopyaElectronWidget:
                 key=ch.get('key', '')
             )
             self._child_ids.append(str(child_id))
-        self._props = props
-        self._key = key
-        self._javascript_state_changed_handlers = []
-        self._add_child_handlers = []
-
+        
         self._model_id = uuid.uuid4().hex.upper()
         self._props = props
         self._key = key
         self._javascript_state_changed_handlers = []
+        self._custom_message_handlers = []
+        self._add_child_handlers = []
         self._tempdir = str(tempfile.mkdtemp(prefix='reactopya_electron_widget_'))
         self._bundle_fname = None
         self._electron_src = None
@@ -70,15 +68,25 @@ class ReactopyaElectronWidget:
         if os.path.exists(self._tempdir):
             shutil.rmtree(self._tempdir)
 
-    def set_python_state(self, state, child_indices=[]):
+    def set_python_state(self, state):
         msg = dict(
             name='setPythonState',
             state=_json_serialize(state)
         )
         self._process.sendMessage(msg)
+
+    def send_custom_message(self, message):
+        msg = dict(
+            name='customMessage',
+            message=_json_serialize(message)
+        )
+        self._process.sendMessage(msg)
     
     def on_javascript_state_changed(self, handler):
         self._javascript_state_changed_handlers.append(handler)
+    
+    def on_custom_message(self, handler):
+        self._custom_message_handlers.append(handler)
     
     def on_add_child(self, handler):
         self._add_child_handlers.append(handler)
@@ -100,6 +108,10 @@ class ReactopyaElectronWidget:
             state = msg['state']
             for handler in self._javascript_state_changed_handlers:
                 handler(state)
+        elif name == 'customMessage':
+            message = msg['message']
+            for handler in self._custom_message_handlers:
+                handler(message)
         elif name == 'addChild':
             data = msg.get('data')
             for handler in self._add_child_handlers:

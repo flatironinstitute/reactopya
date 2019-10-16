@@ -16,6 +16,9 @@ class ReactopyaElectronPythonProcess {
             if (msg.name === 'setPythonState') {
                 this._model.setPythonState(msg.state);
             }
+            else if (msg.name === 'customMessage') {
+                this._model.handleCustomMessage(msg.message);
+            }
         });
         this._initialize_model(this._model, children);
     }
@@ -42,6 +45,12 @@ class ReactopyaElectronPythonProcess {
             that.sendMessage({
                 name: 'setJavaScriptState',
                 state: state
+            });
+        });
+        model.onSendCustomMessage((msg) => {
+            that.sendMessage({
+                name: 'customMessage',
+                message: msg
             });
         });
         model.addChildModelsFromSerializedChildren(children);

@@ -7,6 +7,7 @@ class ReactopyaComponent:
     def __init__(self, Widget):
         self._python_state = dict()
         self._python_state_changed_handlers = []
+        self._send_custom_message_handlers = []
         self._javascript_state = dict()
         self._quit = False
         self._running_process = False
@@ -15,6 +16,7 @@ class ReactopyaComponent:
         setattr(self._widget_instance, 'set_python_state', self.set_python_state)
         setattr(self._widget_instance, 'get_python_state', self.get_python_state)
         setattr(self._widget_instance, 'get_javascript_state', self.get_javascript_state)
+        setattr(self._widget_instance, 'send_message', self.send_custom_message)
 
     def javascript_state_changed(self, prev_state, new_state):
         self._widget_instance.javascript_state_changed(prev_state, new_state)
@@ -52,6 +54,9 @@ class ReactopyaComponent:
 
     def on_python_state_changed(self, handler):
         self._python_state_changed_handlers.append(handler)
+    
+    def on_send_custom_message(self, handler):
+        self._send_custom_message_handlers.append(handler)
 
     def _initial_update(self):
         self.javascript_state_changed(deepcopy2(self._javascript_state), deepcopy2(self._javascript_state))
@@ -68,6 +73,16 @@ class ReactopyaComponent:
                 self._javascript_state[key] = changed_state[key]
             self.javascript_state_changed(prev_javascript_state, deepcopy2(self._javascript_state))
             sys.stdout.flush()
+        
+    def send_custom_message(self, message):
+        for handler in self._send_custom_message_handlers:
+            handler(message)
+    
+    def _handle_custom_message(self, message):
+        if hasattr(self._widget_instance, 'on_message'):
+            self._widget_instance.on_message(message)
+        else:
+            raise Exception('Unable to process custom message. No on_message method found in widget.')
 
 def deepcopy2(x):
     if isinstance(x, dict):

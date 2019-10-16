@@ -33,6 +33,13 @@ class ReactopyaJupyterWidgetModel extends widgets.DOMWidgetModel {
             });
         });
 
+        this.reactopyaModel.onSendCustomMessage(function(msg) {
+            that.send({
+                name: 'customMessage',
+                message: msg
+            });
+        });
+
         // important that this comes after we have added the initial children to the model
         this.reactopyaModel.onChildModelAdded(function(data) {
             that.send({
@@ -49,6 +56,10 @@ class ReactopyaJupyterWidgetModel extends widgets.DOMWidgetModel {
         else if (name == 'setPythonState') {
             let state = content.state;
             this.reactopyaModel.setPythonState(state);
+        }
+        else if (name == 'customMessage') {
+            let message = content.message;
+            this.reactopyaModel.handleCustomMessage(message);
         }
         else {
             console.error(`Unregognized message in Model: ${name}`);

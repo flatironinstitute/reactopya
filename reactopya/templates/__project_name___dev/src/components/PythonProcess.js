@@ -18,6 +18,12 @@ export default class PythonProcess {
             if (msg.name == 'setPythonState') {
                 this._reactopyaModel.setPythonState(msg.state);
             }
+            else if (msg.name == 'customMessage') {
+                this._reactopyaModel.handleCustomMessage(msg.message);
+            }
+            else {
+                console.warn('Unexpected message name in PythonProcess._onReceiveMessage', msg.name, msg);
+            }
         });
         reactopyaModel.onJavaScriptStateChanged((state) => {
             this._sendMessage({
@@ -25,6 +31,12 @@ export default class PythonProcess {
                 state: state
             });
         });
+        reactopyaModel.onSendCustomMessage((msg) => {
+            this._sendMessage({
+                name: 'customMessage',
+                message: msg
+            });
+        })
         reactopyaModel.onStart(() => {
             this.start();
         });

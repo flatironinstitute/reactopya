@@ -28,11 +28,14 @@ class _BaseWidget:
         self._component = ReactopyaComponent(WidgetOrig)
         self._component.on_python_state_changed(
             lambda state: self._handle_python_state_changed(state))
+        self._component.on_send_custom_message(
+            lambda message: self._handle_send_custom_message(message))
         self._reactopya_widget = None
         self._javascript_state = dict()  # for snapshot
         self._python_state = dict()  # for snapshot
         self._running_process = False  # for run_process_mode
         self._python_state_changed_handlers = []
+        self._send_custom_message_handlers = []
         self._is_dynamic_child=False
         # self._component._initial_update()
     
@@ -48,6 +51,8 @@ class _BaseWidget:
         child_id = str(child_id)
         child.on_python_state_changed(
             lambda state: self._handle_python_state_changed(dict(_childId=child_id, state=state)))
+        child.on_send_custom_message(
+            lambda message: self._handle_send_custom_message(dict(_childId=child_id, message=message)))
 
     def _handle_python_state_changed(self, state):
         logger.info('WIDGET:%s:_handle_python_state_changed', self._widget_type)
@@ -62,8 +67,23 @@ class _BaseWidget:
         for handler in self._python_state_changed_handlers:
             handler(state)
     
+    def _handle_send_custom_message(self, message):
+        logger.info('WIDGET:%s:_handle_send_custom_message', self._widget_type)
+        if self._reactopya_widget:
+            self._reactopya_widget.send_custom_message(message)
+        if self._running_process:
+            msg = {"name": "customMessage", "message": message}
+            self._send_message_to_parent_process(msg)
+        for handler in self._send_custom_message_handlers:
+            # i don't think this is used
+            handler(message)
+    
     def on_python_state_changed(self, handler):
         self._python_state_changed_handlers.append(handler)
+    
+    def on_send_custom_message(self, handler):
+        # I don't think this is used
+        self._send_custom_message_handlers.append(handler)
 
     
     # internal function to send message to javascript component
@@ -72,8 +92,11 @@ class _BaseWidget:
         txt = simplejson.dumps(msg, ignore_nan=True)
         msg_path = os.path.join(self._run_process_mode_dirpath, '{}.msg-from-python'.format(self._run_process_mode_message_index))
         self._run_process_mode_message_index = self._run_process_mode_message_index + 1
-        write_text_file(msg_path + '.tmp', txt)
-        os.rename(msg_path + '.tmp', msg_path)
+        try:
+            write_text_file(msg_path + '.tmp', txt)
+            os.rename(msg_path + '.tmp', msg_path)
+        except:
+            print('WARNING: unable to write file: {}'.format(msg_path))
 
     def _handle_javascript_state_changed(self, state):
         for key in state:
@@ -91,6 +114,16 @@ class _BaseWidget:
         for key, val in state.items():
             self._javascript_state[key] = val  # for snapshot
         self._component._handle_javascript_state_changed(state)
+    
+    def _handle_custom_message(self, message):
+        if '_childId' in message:
+            child_id = str(message['_childId'])
+            if child_id in self._children:
+                self._children[str(child_id)]._handle_custom_message(message['message'])
+            else:
+                logger.error('WIDGET:%s:_handle_custom_message:Child %s not found', self._widget_type, child_id)
+            return
+        self._component._handle_custom_message(message)
     
     def _handle_add_child(self, child_id, project_name, type, is_dynamic_child):
         logger.info('WIDGET:%s:_handle_add_child: child_id=%s project_name=%s type=%s', self._widget_type, child_id, project_name, type)
@@ -165,6 +198,8 @@ class _BaseWidget:
             self._reactopya_widget._set_electron_src(init_info['electron_src'])
         self._reactopya_widget.on_javascript_state_changed(
             self._handle_javascript_state_changed)
+        self._reactopya_widget.on_custom_message(
+            self._handle_custom_message)
         self._reactopya_widget.on_add_child(
             self._handle_add_child_data
         )
@@ -249,13 +284,15 @@ class _BaseWidget:
     def _handle_message_process_mode(self, msg):
         if msg['name'] == 'setJavaScriptState':
             self._handle_javascript_state_changed(msg['state'])
+        elif msg['name'] == 'customMessage':
+            self._handle_custom_message(msg['message'])
         elif msg['name'] == 'addChild':
             self._handle_add_child_data(msg['data'])
         elif msg['name'] == 'quit':
             self._quit = True
         else:
             print(msg)
-            raise Exception('Unexpectected message in _handle_message_process_mode')
+            raise Exception('Unexpected message in _handle_message_process_mode', msg['name'])
 
     def export_snapshot(self, output_fname, *, format, use_python_backend_websocket=False):
         import simplejson
@@ -413,6 +450,14 @@ if (([use_python_backend_websocket]) && (window.location.host)) {
         });
     });
 
+    model.onSendCustomMessage(function(msg) {
+        if (verbose) console.info('model.onSendCustomMessage', msg);
+        client.send({
+            name: 'customMessage',
+            message: msg
+        });
+    });
+
     // important that this comes after we have added the initial children to the model
     model.onChildModelAdded(function(data) {
         if (verbose) console.info('model.onChildModelAdded', data);
@@ -432,8 +477,13 @@ if (([use_python_backend_websocket]) && (window.location.host)) {
             if (verbose) console.info('setPythonState', state);
             model.setPythonState(state);
         }
+        else if (name == 'customMessage') {
+            let message = msg.message;
+            if (verbose) console.info('customMessage', message);
+            model.handleCustomMessage(message);
+        }
         else {
-            console.error(`Unrecognized message in from websocket client: ${name}`, msg);
+            console.error(`Unrecognized message from from websocket client: ${name}`, msg);
         }
     });
 }

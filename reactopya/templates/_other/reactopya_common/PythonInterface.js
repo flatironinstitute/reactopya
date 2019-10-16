@@ -104,6 +104,22 @@ export default class PythonInterface {
         }
         else return undefined;
     }
+    sendMessage(msg) {
+        if (this._reactopyaModel) {
+            this._reactopyaModel.sendCustomMessage(msg);
+        }
+        else {
+            console.error('Problem in sendMessage: unable to find one of: this.reactopyaModel, props.reactopyaModel');
+        }
+    }
+    onMessage(handler) {
+        if (this._reactopyaModel) {
+            this._reactopyaModel.onCustomMessage(handler);
+        }
+        else {
+            console.error('Problem in onMessage: unable to find one of: this.reactopyaModel, props.reactopyaModel');
+        }
+    }
     _setComponentStateFromModel() {
         // important for html snapshots
         if (this._reactopyaModel) {

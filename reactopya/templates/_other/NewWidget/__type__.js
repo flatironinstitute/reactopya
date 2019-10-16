@@ -18,18 +18,20 @@ export default class {{ NewWidget.type }} extends Component {
     componentDidMount() {
         this.pythonInterface = new PythonInterface(this, config);
         this.pythonInterface.start();
+        this.setState({
+            status: 'started',
+            status_message: 'Starting python backend'
+        });
+        // Use this.pythonInterface.setState(...) to pass data to the python backend
     }
     componentWillUnmount() {
         this.pythonInterface.stop();
     }
     render() {
         return (
-            <React.Fragment>
-                <div>{{ NewWidget.type }}</div>
-                <RespectStatus {...this.state}>
-                    <div>Render {{ NewWidget.type }} here</div>
-                </RespectStatus>
-            </React.Fragment>
+            <RespectStatus {...this.state}>
+                <div>Render {{ NewWidget.type }} here</div>
+            </RespectStatus>
         )
     }
 }
@@ -38,8 +40,10 @@ class RespectStatus extends Component {
     state = {}
     render() {
         switch (this.props.status) {
+            case 'started':
+                return <div>Started: {this.props.status_message}</div>
             case 'running':
-                return <div>Running: {this.props.status_message}</div>
+                return <div>{this.props.status_message}</div>
             case 'error':
                 return <div>Error: {this.props.status_message}</div>
             case 'finished':

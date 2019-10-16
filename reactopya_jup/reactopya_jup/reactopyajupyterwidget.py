@@ -37,6 +37,7 @@ class ReactopyaJupyterWidget(widgets.DOMWidget):
         self._m_props = props
         self._m_key = key
         self._javascript_state_changed_handlers = []
+        self._custom_message_handlers = []
         self._add_child_handlers = []
         self.observe(self._on_change)
         self.set_trait('_project_name', project_name)
@@ -68,8 +69,18 @@ class ReactopyaJupyterWidget(widgets.DOMWidget):
             state=_json_serialize(state)
         ))
     
+    def send_custom_message(self, message):
+        logger.info('ReactopyaJupyterWidget:set_custom_message for %s', self._m_type)
+        self.send(dict(
+            name='customMessage',
+            message=_json_serialize(message)
+        ))
+    
     def on_javascript_state_changed(self, handler):
         self._javascript_state_changed_handlers.append(handler)
+    
+    def on_custom_message(self, handler):
+        self._custom_message_handlers.append(handler)
     
     def on_add_child(self, handler):
         self._add_child_handlers.append(handler)
@@ -81,6 +92,11 @@ class ReactopyaJupyterWidget(widgets.DOMWidget):
             logger.info('ReactopyaJupyterWidget:_handle_message:setJavaScriptState for %s: %s', self._m_type, state)
             for handler in self._javascript_state_changed_handlers:
                 handler(state)
+        elif name == 'customMessage':
+            message = content['message']
+            logger.info('ReactopyaJupyterWidget:_handle_message:custom_message for %s: %s', self._m_type, message)
+            for handler in self._custom_message_handlers:
+                handler(message)
         elif name == 'addChild':
             data = content.get('data')
             logger.info('ReactopyaJupyterWidget:_handle_message:addChild for %s: %s', self._m_type, data)

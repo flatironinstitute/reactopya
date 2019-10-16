@@ -30,6 +30,8 @@ class ReactopyaModel {
 
         this._pythonStateChangedHandlers = [];
         this._javaScriptStateChangedHandlers = [];
+        this._sendCustomMessageHandlers = [];
+        this._customMessageHandlers = [];
         this._childModelAddedHandlers = [];
         this._startHandlers = [];
         this._stopHandlers = [];
@@ -86,6 +88,14 @@ class ReactopyaModel {
                 });
             }
         });
+        model.onSendCustomMessage((msg) => {
+            for (let handler of this._sendCustomMessageHandlers) {
+                handler({
+                    _childId: childId,
+                    message: msg
+                });
+            }
+        });
         model.onChildModelAdded((data) => {
             for (let handler of this._childModelAddedHandlers) {
                 handler({
@@ -112,6 +122,15 @@ class ReactopyaModel {
         }
         return model;
     }
+    sendCustomMessage(message) {
+        if (message._childId) {
+            this._childModels[state._childId + ''].sendCustomMessage(message.message);
+            return;
+        }
+        for (let handler of this._sendCustomMessageHandlers) {
+            handler(message);
+        }
+    }
     childModel(childId) {
         return this._childModels[childId + ''];
     }
@@ -133,6 +152,12 @@ class ReactopyaModel {
     onJavaScriptStateChanged(handler) {
         this._javaScriptStateChangedHandlers.push(handler);
     }
+    onSendCustomMessage(handler) {
+        this._sendCustomMessageHandlers.push(handler);
+    }
+    onCustomMessage(handler) {
+        this._customMessageHandlers.push(handler);
+    }
     onChildModelAdded(handler) {
         this._childModelAddedHandlers.push(handler);
     }
@@ -141,6 +166,15 @@ class ReactopyaModel {
     }
     onStop(handler) {
         this._stopHandlers.push(handler);
+    }
+    handleCustomMessage(message) {
+        if (message._childId) {
+            this._childModels[message._childId + ''].handleCustomMessage(message.message);
+            return;
+        }
+        for (let handler of this._customMessageHandlers) {
+            handler(message);
+        }
     }
     _setStateHelper(state, existingStateStringified, handlers) {
         let changedState = {};

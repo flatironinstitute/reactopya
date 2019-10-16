@@ -55,22 +55,25 @@ class FullBrowser extends Component {
             width: null,
             height: null
         };
+        this.updateDimensionsScheduled = false;
     }
 
     async componentDidMount() {
         this.updateDimensions();
-        window.addEventListener("resize", this.resetSize);
+        window.addEventListener("resize", this.scheduleUpdateDimensions);
     }
 
     componentWillUnmount() {
-        window.removeEventListener("resize", this.resetSize);
+        window.removeEventListener("resize", this.scheduleUpdateDimensions);
     }
 
-    resetSize = () => {
-        this.setState({
-            width: null,
-            height: null
-        });
+    scheduleUpdateDimensions = () => {
+        if (this.updateDimensionsScheduled) return;
+        this.updateDimensionsScheduled = true;
+        setTimeout(() => {
+            this.updateDimensionsScheduled = false;
+            this.updateDimensions();
+        }, 300);
     }
 
     async componentDidUpdate(prevProps, prevState) {

@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const util = require('util');
@@ -63,6 +63,12 @@ async function show() {
             nodeIntegration: false,
             preload: __dirname + '/preload.js'
         }
+    });
+
+    //open links externally
+    mainWindow.webContents.on('new-window', function(event, url){
+        event.preventDefault();
+        shell.openExternal(url);
     });
 
     await mainWindow.loadURL(`file://${__dirname}/../web/index.html`);

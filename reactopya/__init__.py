@@ -1,4 +1,4 @@
-from .component import Component
+# from .component import Component
 from .shellscript import ShellScript
 from ._version import __version__
 

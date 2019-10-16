@@ -18,6 +18,7 @@ class ReactopyaColabWidget:
         self._props = props
         self._key = key
         self._javascript_state_changed_handlers = []
+        self._custom_message_handlers = []
         self._bundle_js = None
         self._store_bundle_in_notebook = False
 
@@ -50,6 +51,7 @@ class ReactopyaColabWidget:
         display(Javascript(js_code))
     
     def set_python_state(self, state, child_indices=[]):
+        # we don't use child_indices any more! need to fix this
         js_code = '''
             let json_state = atob('[python_state_json_b64]');
             let state = JSON.parse(json_state);
@@ -72,8 +74,15 @@ class ReactopyaColabWidget:
             '[child_indices_json_b64]', child_indices_json_b64)
         display(Javascript(js_code))
     
+    def send_custom_message(self, message):
+        # need to finish this
+        pass
+    
     def on_javascript_state_changed(self, handler):
         self._javascript_state_changed_handlers.append(handler)
+    
+    def on_custom_message(self, handler):
+        self._custom_message_handlers.append(handler)
     
     def _register_callback(self):
         from google.colab import output as colab_output  # pylint: disable=import-error
@@ -83,8 +92,11 @@ class ReactopyaColabWidget:
         js_code = '''
         {
             let model = new window.JavaScriptPythonStateModelColab();
-            model.onJavaScriptStateChanged(function(state, child_indices) {
+            model.onJavaScriptStateChanged(function(state) {
                 google.colab.kernel.invokeFunction('reactopya.[model_id]', ['handleJavaScriptStateChanged'], {state: state});
+            });
+            model.onSendCustomMessage(function(message) {
+                google.colab.kernel.invokeFunction('reactopya.[model_id]', ['handleCustomMessage'], {message: message});
             });
             window.reactopya_colab_widget_models['[model_id]'] = model;
         }
@@ -110,10 +122,13 @@ class ReactopyaColabWidget:
             model_id=self._model_id
         )
     
-    def _handle_callback(self, command, *, state=None, child_indices=[]):
+    def _handle_callback(self, command, *, state=None, message=None, child_indices=[]):
         if command == 'handleJavaScriptStateChanged':
             for handler in self._javascript_state_changed_handlers:
                 handler(state, child_indices)
+        elif command == 'handleCustomMessage':
+            for handler in self._custom_message_handlers:
+                handler(message, child_indices)
         elif command == 'load_bundle_and_show':
             display(Javascript(self._bundle_js))
             if not self._store_bundle_in_notebook:
