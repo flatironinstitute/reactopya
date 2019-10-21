@@ -137,6 +137,11 @@ class ReactopyaModel {
         this._running = false;
         for (let handler of this._stopHandlers)
             handler();
+
+        // is this going to cause a problem?
+        this._pythonStateStringified = {};
+        this._javaScriptStateStringified = {};
+        this._childModels = {};
     }
     onPythonStateChanged(handler) {
         this._pythonStateChangedHandlers.push(handler);

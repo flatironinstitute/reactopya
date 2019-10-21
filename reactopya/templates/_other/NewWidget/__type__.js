@@ -23,6 +23,9 @@ export default class {{ NewWidget.type }} extends Component {
             status_message: 'Starting python backend'
         });
         // Use this.pythonInterface.setState(...) to pass data to the python backend
+        this.pythonInterface.setState({
+            test: 1
+        });
     }
     componentWillUnmount() {
         this.pythonInterface.stop();
