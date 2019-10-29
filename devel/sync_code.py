@@ -7,9 +7,11 @@ def main():
     src_path = os.path.join(dirname, '..', 'reactopya', 'templates', '__project_name___dev', 'src', 'components', 'ReactopyaModel.js')
     dst_path1 = os.path.join(dirname, '..', 'reactopya_jup', 'lib', 'ReactopyaModel.js')
     dst_path2 = os.path.join(dirname, '..', 'reactopya', 'templates', '__project_name__', '__project_name__', 'electron', 'src', 'ReactopyaModel.js')
+    dst_path3 = os.path.join(dirname, '..', 'reactopya', 'templates', '__project_name___bundle', 'ReactopyaModel.js')
 
     _copy_if_needed(src_path, dst_path1)
     _copy_if_needed(src_path, dst_path2)
+    _copy_if_needed(src_path, dst_path3)
 
 def _copy_if_needed(src_path, dst_path):
     st_mode = os.stat(src_path).st_mode

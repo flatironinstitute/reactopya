@@ -1,5 +1,6 @@
 import ReactDOM from 'react-dom';
 import React, { Component } from 'react';
+import ReactopyaModel from './ReactopyaModel';
 // if (!window.React) {
 //     window.React = React;
 // }
@@ -14,6 +15,7 @@ import { {{ widget.type }} } from './widgets/index.js';
 window.reactopya = window.reactopya || {};
 window.reactopya.widgets = window.reactopya.widgets || {};
 window.reactopya.widgets.{{ project_name }} = {};
+window.ReactopyaModel = ReactopyaModel;
 
 let widgetsByType = {};
 {% for widget in widgets -%}

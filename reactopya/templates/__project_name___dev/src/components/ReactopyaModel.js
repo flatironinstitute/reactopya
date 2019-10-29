@@ -3,6 +3,7 @@ This file is duplicated between
 * reactopya_jup/lib/ReactopyaModel.js and
 * reactopya/templates/__project_name___dev/src/components/ReactopyaModel.js
 * reactopya/templates/__project_name__/__project_name__/electron/src/ReactopyaModel.js
+* reactopya/templates/__project_name___bundle/ReactopyaModel.js
 Only edit the one in
 reactopya/templates/__project_name___dev/src/components/ReactopyaModel.js
 Other edits will get overwritten when you run
