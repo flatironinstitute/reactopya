@@ -52,7 +52,6 @@ ComponentName/
     ComponentName.json
         Meta information about the widget:
             Name of the component
-            Specifies which state variables are shared between the JavaScript and Python components
             Other information
 ```
 
