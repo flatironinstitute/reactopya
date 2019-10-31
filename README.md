@@ -16,9 +16,7 @@ Prerequisites:
 * Yarn
 
 ```
-# After cloning this repo
-cd reactopya
-pip install .
+pip install --upgrade reactopya
 ```
 
 ## About Reactopya
