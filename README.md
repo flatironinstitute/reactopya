@@ -16,9 +16,7 @@ Prerequisites:
 * Yarn
 
 ```
-# After cloning this repo
-cd reactopya
-pip install .
+pip install --upgrade reactopya
 ```
 
 ## About Reactopya
@@ -52,7 +50,6 @@ ComponentName/
     ComponentName.json
         Meta information about the widget:
             Name of the component
-            Specifies which state variables are shared between the JavaScript and Python components
             Other information
 ```
 
