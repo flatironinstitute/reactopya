@@ -61,9 +61,14 @@ def main():
             'description': 'Start the electron application in development mode (use install-dev first). This also calls "reactopya watch" in the background.'
         },
         {
+            'name': 'install',
+            'func': _install,
+            'description': 'Build the bundle and install the package.'
+        },
+        {
             'name': 'install-jupyter',
-            'func': _install_jupyter,
-            'description': 'Install the package for jupyter notebook'
+            'func': _install,
+            'description': 'Obsolete. Use install instead.'
         },
         {
             'name': 'build-bundle',
@@ -278,7 +283,7 @@ def _install_all(config, args):
     _install_jupyter(config, args)
     _install_server(config, args)
 
-def _install_jupyter(config, args):
+def _install(config, args):
     _generate(config=config, args=args)
     cmd = '''
         #!/bin/bash
@@ -299,7 +304,7 @@ def _install_jupyter(config, args):
         raise Exception(
             'Shell script exited with non-zero return code: {}'.format(retcode))
 
-    print('You may now import {} within jupyter notebook or jupyter lab.'.format(
+    print('Project {} installed.'.format(
         config['project_name']))
 
 def _build_bundle(config, args):

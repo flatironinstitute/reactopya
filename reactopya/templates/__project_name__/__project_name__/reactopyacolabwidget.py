@@ -1,7 +1,6 @@
 import numpy as np
 import uuid
 from IPython.display import Javascript, clear_output
-import ipywidgets
 import simplejson
 import base64
 import sys
