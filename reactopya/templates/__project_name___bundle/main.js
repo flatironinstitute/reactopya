@@ -170,7 +170,7 @@ class FullBrowser extends Component {
             new_props[key] = elmt.props[key];
         }
 
-        let style0 = { position: 'relative', left: 0, right: 0, top: 0, bottom: 0 };
+        let style0 = { position: 'relative', left: 0, right: 0, top: 0, bottom: 0, overflowY: 'auto' };
         return (
             <div
                 className="determiningWidth"
