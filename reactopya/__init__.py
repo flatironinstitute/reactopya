@@ -6,3 +6,8 @@ def reactopya_templates_directory():
     import os
     dirname = os.path.dirname(os.path.realpath(__file__))
     return os.path.join(dirname, 'templates')
+
+def reactopya_server_directory():
+    import os
+    dirname = os.path.dirname(os.path.realpath(__file__))
+    return os.path.join(dirname, 'reactopya_server')

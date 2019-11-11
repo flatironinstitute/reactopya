@@ -2,7 +2,7 @@ dist
 generated
 static
 package-lock.json
-
+sessions
 
 .mypy_cache
 .vscode

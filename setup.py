@@ -11,7 +11,7 @@ setuptools.setup(
     author_email="jmagland@flatironinstitute.org",
     description="",
     packages=setuptools.find_packages(),
-    scripts=['bin/reactopya'],
+    scripts=['bin/reactopya', 'bin/reactopya-server'],
     include_package_data=True,
     install_requires=[
         "jinja2",

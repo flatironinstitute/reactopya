@@ -116,8 +116,10 @@ class ReactopyaColabWidget:
             self._handle_message(message)
         elif command == 'load_bundle_and_show':
             display(Javascript(self._bundle_js))
-            if not self._store_bundle_in_notebook:
-                clear_output()
+            display(Javascript('''google.colab.output.setIframeHeight(0, true, {maxHeight: 50000})'''))
+            # The following does not work right now -- the window.ReactopyaModel is not saved - maybe the js does not even get executed - I think we need to have a callback that then clears it or something
+            # if not self._store_bundle_in_notebook:
+            #     clear_output()
             self._handle_callback('show')
         elif command == 'show':
             js_code = '''

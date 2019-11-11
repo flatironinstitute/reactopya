@@ -1,0 +1,19 @@
+{
+    "name": "reactoypa_server",
+    "version": "0.1.1",
+    "main": "server/main.js",
+    "license": "Apache-2.0",
+    "homepage": "https://github.com/flatironinstitute/reactopya",
+    "scripts": {
+      "build": "webpack && chmod a+x dist/server.js"
+    },
+    "dependencies": {
+      "express": "^4.17.1",
+      "ws": "^7.1.2"
+    },
+    "devDependencies": {
+      "webpack": "^4.40.2",
+      "webpack-cli": "^3.3.9"
+    }
+  }
+  

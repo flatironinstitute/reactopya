@@ -1,0 +1,43 @@
+#!/usr/bin/env python
+
+import os
+import sys
+import argparse
+import time
+import tempfile
+import subprocess
+import reactopya
+
+def main():
+    old_stdout = sys.stdout
+    sys.stdout = sys.stderr
+
+    parser = argparse.ArgumentParser(description='Host a reactopya server')
+    parser.add_argument('config_file', help='Path to the JSON config file for the server')
+    parser.add_argument('--working_dir', help='The existing working directory to use (otherwise creates a temporary directory)', required=False, default=None)
+    parser.add_argument('--port', help='The port to listen on', required=True)
+
+    args = parser.parse_args()
+
+    script_path = os.path.dirname(os.path.realpath(__file__))
+
+    working_dir = args.working_dir
+    if working_dir is None:
+        working_dir = os.path.join(tempfile.gettempdir(), 'reactopya_server')
+        if not os.path.exists(working_dir):
+            os.mkdir(working_dir)
+
+    my_env = os.environ.copy()
+    my_env["REACTOPYA_SERVER_LISTEN_PORT"] = '{}'.format(args.port)
+    my_env["REACTOPYA_SERVER_CONFIG_PATH"] = '{}'.format(args.config_file)
+    my_env["REACTOPYA_SERVER_WORKING_DIR"] = '{}'.format(working_dir)
+
+
+    p = subprocess.Popen(['node', reactopya.reactopya_server_directory() + '/dist/server.js'], env=my_env)
+    try:
+        p.wait()
+    finally:
+        p.terminate()
+
+if __name__ == "__main__":
+    main()

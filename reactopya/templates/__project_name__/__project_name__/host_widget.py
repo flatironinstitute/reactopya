@@ -4,6 +4,9 @@ import importlib
 from .shellscript import ShellScript
 
 def host_widget(serialized_widget, *, port):
+    raise Exception('Function host_widget() no longer supported. Use reactopya_server instead.')
+
+def host_widget_old(serialized_widget, *, port):
     with tempfile.TemporaryDirectory(prefix='reactopya_host_widget') as tmpdir:
         server = Server(serialized_widget=serialized_widget, port=port, tmpdir=tmpdir)
         try:

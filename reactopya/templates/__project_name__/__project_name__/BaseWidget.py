@@ -7,6 +7,7 @@ import uuid
 import numpy as np
 from .reactopyacolabwidget import ReactopyaColabWidget
 from .reactopyaelectronwidget import ReactopyaElectronWidget
+from .reactopyahostedwidget import ReactopyaHostedWidget
 from .init import _get_init_info
 from .host_widget import host_widget
 from .reactopyacomponent import ReactopyaComponent
@@ -167,20 +168,21 @@ class _BaseWidget:
 
         return obj
 
-    def _reactopya_widget(self):
-        return self._reactopya_widget
-
     def show(self, **kwargs):
         init_info = _get_init_info()
-        if init_info['mode'] == 'jupyter':
-            from reactopya_jup import ReactopyaJupyterWidget
-            RW = ReactopyaJupyterWidget
-        elif init_info['mode'] == 'colab':
-            RW = ReactopyaColabWidget
-        elif init_info['mode'] == 'electron':
-            RW = ReactopyaElectronWidget
+        if os.getenv('REACTOPYA_SERVER_SESSION_DIR', None):
+            RW = ReactopyaHostedWidget
+            init_info['mode'] = 'hosted'
         else:
-            raise Exception('You need to initialize {{ project_name }} via one of the following: init_jupyter() or init_electron()')
+            if init_info['mode'] == 'jupyter':
+                from reactopya_jup import ReactopyaJupyterWidget
+                RW = ReactopyaJupyterWidget
+            elif init_info['mode'] == 'colab':
+                RW = ReactopyaColabWidget
+            elif init_info['mode'] == 'electron':
+                RW = ReactopyaElectronWidget
+            else:
+                raise Exception('You need to initialize {{ project_name }} via one of the following: init_jupyter() or init_electron()')
         self._reactopya_widget = RW(
             project_name=self._project_name,
             type=self._widget_type,
@@ -196,6 +198,18 @@ class _BaseWidget:
         elif init_info['mode'] == 'electron':
             self._reactopya_widget._set_bundle_fname(init_info['bundle_fname'])
             self._reactopya_widget._set_electron_src(init_info['electron_src'])
+        elif init_info['mode'] == 'hosted':
+            session_id = os.getenv('REACTOPYA_SERVER_SESSION_ID')
+            session_dir = os.getenv('REACTOPYA_SERVER_SESSION_DIR')
+            html = self.export_snapshot(
+                output_fname=None,
+                format='html',
+                use_python_backend_websocket=True,
+                session_id=session_id
+            )
+            self._reactopya_widget._set_snapshot_html(html)
+            self._reactopya_widget._set_session_dir(session_dir)
+            self._reactopya_widget._set_session_id(session_id)
         self._reactopya_widget.on_javascript_state_changed(
             self._handle_javascript_state_changed)
         self._reactopya_widget.on_custom_message(
@@ -207,7 +221,8 @@ class _BaseWidget:
         return self._reactopya_widget.show(**kwargs)
     
     def host(self, *, port):
-        host_widget(self._serialize(), port=port)
+        raise Exception('Method host() no longer supported. Use reactopya_server instead.')
+        # host_widget(self._serialize(), port=port)
 
     def run_process_mode(self, dirpath):
         self._start_process_mode(dirpath)
@@ -294,7 +309,7 @@ class _BaseWidget:
             print(msg)
             raise Exception('Unexpected message in _handle_message_process_mode', msg['name'])
 
-    def export_snapshot(self, output_fname, *, format, use_python_backend_websocket=False):
+    def export_snapshot(self, output_fname, *, format, use_python_backend_websocket=False, session_id=''):
         import simplejson
         if format is not 'html':
             raise Exception('Unsupported format: {}'.format(format))
@@ -372,7 +387,6 @@ if (([use_python_backend_websocket]) && (window.location.host)) {
             if (verbose) console.info('WebsocketClient constructor');
             this._validationConfirmed = false;
             this._connected = false;
-            this._python_processes = {};
             this._pendingMessages = [];
             this._messageHandlers = [];
         }
@@ -382,7 +396,8 @@ if (([use_python_backend_websocket]) && (window.location.host)) {
                 this._ws = new window.WebSocket(url);
                 this._ws.addEventListener('open', () => {
                     this._connected = true;
-                    this._sendMessage({message_type: 'validation', validation_string: 'reactopya-1'});
+                    // this._sendMessage({message_type: 'validation', validation_string: 'reactopya-1'});
+                    this._sendMessage({message_type: 'validation', validation_string: 'reactopya-2', session_id: '[session_id]'});
                 });
                 this._ws.addEventListener('message', (evt) => {this._handleMessage(evt.data);});
             }
@@ -544,9 +559,13 @@ function get_snapshot_json_b64() {
 </html>
         '''
         html = html.replace('[snapshot_json_b64]', base64.b64encode(simplejson.dumps(snapshot, ignore_nan=True).encode('utf-8')).decode())
+        html = html.replace('[session_id]', session_id)
         html = html.replace('[use_python_backend_websocket]', 'true' if use_python_backend_websocket else 'false')
-        with open(output_fname, 'w') as f:
-            f.write(html)
+        if output_fname is not None:
+            with open(output_fname, 'w') as f:
+                f.write(html)
+        else:
+            return html
 
 def _get_all_project_names(serialized_widget):
     ret = []

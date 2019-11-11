@@ -1,2 +1,3 @@
 include reactopya/VERSION
 recursive-include reactopya/templates *
+include reactopya/reactopya_server/dist/server.js
