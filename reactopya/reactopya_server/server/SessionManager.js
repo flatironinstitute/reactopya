@@ -137,16 +137,18 @@ class AppSession {
         while (true) {
             try {
                 let html = await fs.promises.readFile(this._sessionDir + '/index.html', 'utf-8');
-                return html;
+                if (html) {
+                    return html;
+                }
             }
             catch (err) {
-                let elapsed = (new Date()) - timer;
-                if (elapsed > 15000) {
-                    // it's been too long
-                    this._status = 'error';
-                    console.warn('Timout waiting for index.html to appear.');
-                    return null;
-                }
+            }
+            let elapsed = (new Date()) - timer;
+            if (elapsed > 15000) {
+                // it's been too long
+                this._status = 'error';
+                console.warn('Timout waiting for index.html to appear.');
+                return null;
             }
             await waitMsec(200);
         }
