@@ -180,7 +180,7 @@ def _install_dev(config, args):
         yarn install
         yarn install-electron
         cd ../{project_name}
-        pip install -e .
+        pip install --no-cache-dir -e .
     '''.format(project_name=config['project_name'])
     shell_cmd = ShellScript(cmd)
     shell_cmd.start()
@@ -294,7 +294,7 @@ def _install(config, args):
         echo "======================================= BUNDLE BUILD ======================================="
         yarn build
         cd ../{project_name}
-        pip install -e .
+        pip install --no-cache-dir -e .
     '''.format(project_name=config['project_name'])
     shell_cmd = ShellScript(cmd)
     shell_cmd.start()
