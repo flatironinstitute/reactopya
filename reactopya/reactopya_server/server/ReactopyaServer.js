@@ -37,6 +37,14 @@ export default class ReactopyaServer {
                 await this._errorResponse(req, res, 500, err.message);
             }
         });
+        this._app.get('/', async (req, res) => {
+            try {
+                await this._apiStartSession(req, res)
+            }
+            catch(err) {
+                await this._errorResponse(req, res, 500, err.message);
+            }
+        });
     }
     async _handleMessageFromPython(sessionId, msg) {
         await this._websocketServer.sendMessageToJavaScript(sessionId, msg);
@@ -48,7 +56,7 @@ export default class ReactopyaServer {
         let params = req.params;
         let query = req.query;
         let appName = params.appName;
-        let S = await this._sessionManager.startSession(appName, query);
+        let S = await this._sessionManager.startSession(appName || 'root', query);
         if (!S) {
             await this._errorResponse(req, res, 500, 'Unable to start session.');
             return;
@@ -83,6 +91,9 @@ export default class ReactopyaServer {
         this._websocketServer = new ReactopyaWebsocketServer(this._app.server);
         this._websocketServer.onMessageFromJavaScript(async (sessionId, message) => {
             await this._sessionManager.handleMessageFromJavaScript(sessionId, message);
+        });
+        this._websocketServer.onDisconnect(async (sessionId) => {
+            await this._sessionManager.stopSession(sessionId);
         });
         await this._websocketServer.start();
         console.info('Server running.');

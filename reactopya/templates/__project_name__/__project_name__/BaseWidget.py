@@ -405,6 +405,11 @@ if (([use_python_backend_websocket]) && (window.location.host)) {
                 console.error('Cannot connect to websocket -- window.WebSocket is not defined');
             }
         }
+        close() {
+            if (this._ws) {
+                this._ws.close();
+            }
+        }
         send(msg) {
             if (verbose) console.info('WebsocketClient send', msg);
             let message = {
@@ -456,6 +461,15 @@ if (([use_python_backend_websocket]) && (window.location.host)) {
 
     let client = new WebsocketClient();
     client.connect('ws://' + window.location.host);
+    keepAlive();
+    function keepAlive() {
+        setTimeout(function() {
+            client.send({
+                name: 'keepAlive'
+            });
+            keepAlive();
+        }, 15000);
+    }
 
     model.onJavaScriptStateChanged(function(state) {
         if (verbose) console.info('model.onJavaScriptStateChanged', state);

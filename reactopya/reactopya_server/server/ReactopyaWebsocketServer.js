@@ -6,11 +6,15 @@ export default class ReactopyaWebsocketServer {
         this._connections = {}; // connections by session id
         this._pendingMessagesBySessionId = {}; // in case we get messages from python before the websocket connection has been made\
         this._messageFromJavaScriptHandlers = []; // handlers for javascript messages
+        this._disconnectHandlers = [];
     }
     onMessageFromJavaScript(handler) {
         // handler will by async function!
         // register handler for messages from js
         this._messageFromJavaScriptHandlers.push(handler);
+    }
+    onDisconnect(handler) {
+        this._disconnectHandlers.push(handler);
     }
     async sendMessageToJavaScript(sessionId, msg) {
         // send a message to javascript
@@ -28,9 +32,20 @@ export default class ReactopyaWebsocketServer {
         // make a websocket server listening on the same port as the server
         this._wss = new WebSocket.Server({ server: this._server });
         this._wss.on('connection', (ws) => {
+            ws.on('disconnect', async () => {
+                if ('_sessionId' in ws) {
+                    if (ws._sessionId in this._connections) {
+                        delete this._connections[ws._sessionId];
+                    }
+                    for (let handler of this._disconnectHandlers) {
+                        await handler(ws._sessionId);
+                    }
+                }
+            });
             // new connection from client
             let X = new IncomingConnection(ws);
             X.onReceivedSessionId(async (sessionId) => {
+                ws._sessionId = sessionId;
                 // we have received the info about the session id, so we can save this connection
                 this._connections[sessionId] = X;
                 if (sessionId in this._pendingMessagesBySessionId) {
