@@ -2,13 +2,31 @@
 
 Reactopya is a development tool for creating widgets that combine ReactJS with Python and that may bee seamlessly deployed to the notebook, web, or desktop.
 
-## Example usage
+## Usage
 
-This package is used by the following WIP projects:
+This package is used by the following WIP reactopya projects:
 
 * [ephys-viz](https://github.com/flatironinstitute/ephys-viz)
 * [ccm_widgets](https://github.com/flatironinstitute/ccm_widgets)
 * [kachery_widgets](https://github.com/flatironinstitute/kachery/kachery_widgets)
+
+The structure of a reactopya project is as follows:
+
+```
+reactopya.config.json
+package.json
+dev_widget.json
+widgets/
+    [WidgetName]/
+        __init__.py
+        [WidgetName].py
+        [WidgetName].js
+        [WidgetName].json
+generated/
+    ...
+```
+
+The `generated` folder is created by reactopya and contains all of the code needed to deploy the widgets in the various environments.
 
 ## Installation
 
