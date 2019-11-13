@@ -1,6 +1,6 @@
 # Reactopya
 
-Reactopya is a development tool for creating widgets that combine ReactJS with Python and that may bee seamlessly deployed to the notebook, web, or desktop.
+Reactopya is a development tool for creating widgets that combine ReactJS with Python and that may seamlessly be deployed to the notebook, web, or desktop.
 
 ## Example usage
 
