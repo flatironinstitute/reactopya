@@ -156,6 +156,9 @@ def _init_project(args):
     with open('dev_widget.json', 'w') as f:
         json.dump(dev_widget_json, f, indent=4)
 
+    with open('.gitignore', 'w') as f:
+        f.write('generated\nnode_modules\n__pycache__')
+
     # template_dir =
     # _generate_directory(os.path.join(reactopya_templates_directory(), '_other', 'widgets', ))
     os.mkdir('widgets')
