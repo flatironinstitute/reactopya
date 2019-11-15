@@ -8,6 +8,9 @@ from .all_widgets import *
 {% for X in additional_jupyter_imports %}
 {{ X }}
 {% endfor %}
+{% for X in additional_imports %}
+{{ X }}
+{% endfor %}
 
 from ._version import __version__
 from .init import init_jupyter, init_colab, init_electron
