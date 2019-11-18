@@ -95,8 +95,8 @@ async function show() {
     {
         document.title = '${type} (${project_name})';
         const div = document.getElementById("root");
-        const children = JSON.parse(\`${JSON.stringify(children)}\`);
-        const props = JSON.parse(\`${JSON.stringify(props)}\`);
+        const children = JSON.parse(atob(\`${btoa(JSON.stringify(children))}\`));
+        const props = JSON.parse(atob(\`${btoa(JSON.stringify(props))}\`));
         let process0 = new window.ReactopyaElectronPythonProcess('${message_dir}', children);
         let model0 = process0.reactopyaModel();
         window.reactopya.widgets.${project_name}.${type}.render(
@@ -125,10 +125,10 @@ async function read_text_file(fname) {
     return await readFile(fname, 'utf8');
 }
 
-function exec_javascript(window, js) {
-    return new Promise(resolve => {
-        window.webContents.executeJavaScript(js, null, function () {
-            resolve();
-        });
-    });
+async function exec_javascript(W, js) {
+    await W.webContents.executeJavaScript(js, null);
+}
+
+function btoa(x) {
+    return Buffer.from(x).toString('base64')
 }
