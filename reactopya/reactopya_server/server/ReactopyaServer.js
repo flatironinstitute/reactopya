@@ -45,6 +45,14 @@ export default class ReactopyaServer {
                 await this._errorResponse(req, res, 500, err.message);
             }
         });
+        this._app.get('/killserver/:code', async (req, res) => {
+            try {
+                await this._apiKillServer(req, res)
+            }
+            catch(err) {
+                await this._errorResponse(req, res, 500, err.message);
+            }
+        });
     }
     async _handleMessageFromPython(sessionId, msg) {
         await this._websocketServer.sendMessageToJavaScript(sessionId, msg);
@@ -83,6 +91,22 @@ export default class ReactopyaServer {
         catch(err) {
             console.warn(`Problem destroying connection: ${err.message}`);
         }
+    }
+    async _apiKillServer(req, res) {
+        let params = req.params;
+        let query = req.query;
+        if (process.env.KILL_CODE) {
+            if (params.code == process.env.KILL_CODE) {
+                res.json({success: true, message: 'Killing in a few seconds.'});
+                console.info('KILLING SERVER IN A FEW SECONDS.');
+                setTimeout(function() {
+                    console.info('KILLING SERVER NOW.');
+                    process.exit(-1);
+                }, 5000);
+                return;
+            }
+        }
+        res.json({success: false, error: 'No KILL_CODE environment variable configured or incorrect kill code.'});
     }
     async listen(port) {
         console.info('Starting http server...');
