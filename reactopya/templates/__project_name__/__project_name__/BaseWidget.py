@@ -70,6 +70,7 @@ class _BaseWidget:
     
     def _handle_send_custom_message(self, message):
         logger.info('WIDGET:%s:_handle_send_custom_message', self._widget_type)
+        message = _json_serialize(message)
         if self._reactopya_widget:
             self._reactopya_widget.send_custom_message(message)
         if self._running_process:
