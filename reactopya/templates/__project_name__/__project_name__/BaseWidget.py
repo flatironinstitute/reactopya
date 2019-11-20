@@ -364,23 +364,19 @@ class _BaseWidget:
     <span>Loading html file...</span>
     <script type="text/javascript">
 
-function _initialize() {
-    var snapshot = get_snapshot_json_b64();
-    snapshot = JSON.parse(atob(snapshot));
-    for (let js of snapshot.project_bundles) {
-        eval(js);
-    }
-    window.snapshot=snapshot;
-
-    var sw = snapshot.serialized_widget;
-    let model = create_reactopya_model(sw);
-    attach_reactopya_model(sw, model);
-    // set_init_state_on_props(sw);
-}
-
 {{ ReactopyaModelCode }}
 
-_initialize();
+var snapshot = get_snapshot_json_b64();
+snapshot = JSON.parse(atob(snapshot));
+for (let js of snapshot.project_bundles) {
+    eval(js);
+}
+window.snapshot=snapshot;
+
+var sw = snapshot.serialized_widget;
+let model = create_reactopya_model(sw);
+attach_reactopya_model(sw, model);
+// set_init_state_on_props(sw);
 
 const verbose = false;
 
