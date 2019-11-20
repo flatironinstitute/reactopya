@@ -33,13 +33,10 @@ class ReactopyaComponent:
     def set_python_state(self, state):
         changed_state = dict()
         for key in state:
-            if _different(state[key], self._python_state.get(key)):
-                changed_state[key] = state[key]
-        if changed_state:
-            for key in changed_state:
-                self._python_state[key] = changed_state[key]
-            for handler in self._python_state_changed_handlers:
-                handler(changed_state)
+            changed_state[key] = state[key]
+            self._python_state[key] = state[key]
+        for handler in self._python_state_changed_handlers:
+            handler(changed_state)
         sys.stdout.flush()
     
     def get_javascript_state(self, key):

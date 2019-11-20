@@ -61,6 +61,9 @@ def reactopya_deserialize(x):
         return x
 
 def _serialize_ndarray(x: np.ndarray):
+    if x.dtype == np.int64 or x.dtype == np.uint64:
+        # the int64 and uint64 cannot be json-serialized on the js side, so we convert to float64.
+        x = x.astype(np.float64)
     return dict(
         _reactopya_type='@reactopya-ndarray@',
         shape=list(x.shape),

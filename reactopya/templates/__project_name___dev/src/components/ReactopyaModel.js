@@ -197,6 +197,7 @@ class ReactopyaModel {
 }
 
 function _reactopya_deserialize(x) {
+    if (!x) return x;
     if (Array.isArray(x)) {
         let ret = [];
         for (let i in x) {
@@ -206,7 +207,8 @@ function _reactopya_deserialize(x) {
     }
     else if (typeof(x) == 'object') {
         if ((x._reactopya_type) && (x._reactopya_type === '@reactopya-ndarray@')) {
-            return _reactopya_deserialize_ndarray(x);
+            let ret = _reactopya_deserialize_ndarray(x);
+            return ret;
         }
         else {
             let ret = {};
@@ -230,11 +232,24 @@ function _reactopya_deserialize_ndarray(x) {
     else if (x.dtype == 'float32') {
         TA = Float32Array;
     }
+    else if (x.dtype == 'int64') {
+        // the problem is that BigInt cannot be JSON-serialized.
+        // TA = BigInt64Array;
+        throw new Error('Cannot handle int64. This should have been converted to float64 on the python side.');
+    }
     else if (x.dtype == 'int32') {
         TA = Int32Array;
     }
     else if (x.dtype == 'int16') {
         TA = Int16Array;
+    }
+    else if (x.dtype == 'int8') {
+        TA = Int8Array;
+    }
+    else if (x.dtype == 'uint64') {
+        // the problem is that BigInt cannot be JSON-serialized.
+        // TA = BigUint64Array;
+        throw new Error('Cannot handle uint64. This should have been converted to float64 on the python side.');
     }
     else if (x.dtype == 'uint32') {
         TA = Uint32Array;
@@ -242,10 +257,15 @@ function _reactopya_deserialize_ndarray(x) {
     else if (x.dtype == 'uint16') {
         TA = Uint32Array;
     }
+    else if (x.dtype == 'uint8') {
+        TA = Uint8Array;
+    }
     else {
         throw new Error(`Datatype not yet supported in _reactopya_deserialize_ndarray: ${x.dtype}`);
     }
     let data_1d = new TA(Uint8Array.from(atob(x.data_b64), c => c.charCodeAt(0)).buffer);
+    // important to convert to regular array so it can be JSON-serialized properly later on
+    data_1d = Array.from(data_1d);
     return _make_ndarray(x.shape, data_1d);
 }
 
