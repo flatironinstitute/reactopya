@@ -7,6 +7,7 @@ import os
 import time
 import sys
 import numpy as np
+from .reactopya_serialize import reactopya_serialize, reactopya_deserialize
 
 logger = logging.getLogger('reactopya')
 
@@ -58,14 +59,14 @@ class ReactopyaHostedWidget:
     def set_python_state(self, state):
         msg = dict(
             name='setPythonState',
-            state=_json_serialize(state)
+            state=state
         )
         self._send_message_to_javascript(msg)
 
     def send_custom_message(self, message):
         msg = dict(
             name='customMessage',
-            message=_json_serialize(message)
+            message=message
         )
         self._send_message_to_javascript(msg)
     
@@ -104,6 +105,7 @@ class ReactopyaHostedWidget:
             raise Exception('Unexpected message name: {}'.format(name))
     
     def _send_message_to_javascript(self, msg):
+        msg = reactopya_serialize(msg)
         self._message_index = self._message_index + 1
         write_py_message(self._session_dir, self._message_index, msg)
 
@@ -123,50 +125,7 @@ def take_js_messages(dirname):
             fname = os.path.join(dirname, file)
             with open(fname, 'r') as f:
                 msg = simplejson.load(f)
+            msg = reactopya_deserialize(msg)
             messages.append(msg)
             os.remove(fname)
     return messages
-
-def _listify_ndarray(x):
-    if x.ndim == 1:
-        if np.issubdtype(x.dtype, np.integer):
-            return [int(val) for val in x]
-        else:
-            return [float(val) for val in x]
-    elif x.ndim == 2:
-        ret = []
-        for j in range(x.shape[1]):
-            ret.append(_listify_ndarray(x[:, j]))
-        return ret
-    elif x.ndim == 3:
-        ret = []
-        for j in range(x.shape[2]):
-            ret.append(_listify_ndarray(x[:, :, j]))
-        return ret
-    elif x.ndim == 4:
-        ret = []
-        for j in range(x.shape[3]):
-            ret.append(_listify_ndarray(x[:, :, :, j]))
-        return ret
-    else:
-        raise Exception('Cannot listify ndarray with {} dims.'.format(x.ndim))
-
-def _json_serialize(x):
-    if isinstance(x, np.ndarray):
-        return _listify_ndarray(x)
-    elif isinstance(x, np.integer):
-        return int(x)
-    elif isinstance(x, np.floating):
-        return float(x)
-    elif type(x) == dict:
-        ret = dict()
-        for key, val in x.items():
-            ret[key] = _json_serialize(val)
-        return ret
-    elif type(x) == list:
-        ret = []
-        for i, val in enumerate(x):
-            ret.append(_json_serialize(val))
-        return ret
-    else:
-        return x

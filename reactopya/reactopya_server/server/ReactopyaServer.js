@@ -152,19 +152,3 @@ async function start_http_server(app, listen_port) {
     await app.server.listen(listen_port);
     console.info(`Server is running ${app.protocol} on port ${app.port}`);
 }
-
-function readJsonFile(filePath) {
-    const txt = fs.readFileSync(filePath);
-    try {
-        return JSON.parse(txt);
-    }
-    catch (err) {
-        throw new Error(`Unable to parse JSON of file: ${filePath}`);
-    }
-}
-
-function mkdirIfNeeded(path) {
-    if (!fs.existsSync(path)) {
-        fs.mkdirSync(path);
-    }
-}

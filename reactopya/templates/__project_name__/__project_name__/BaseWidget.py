@@ -11,6 +11,7 @@ from .reactopyahostedwidget import ReactopyaHostedWidget
 from .init import _get_init_info
 from .host_widget import host_widget
 from .reactopyacomponent import ReactopyaComponent
+from .reactopya_serialize import reactopya_serialize, reactopya_deserialize
 
 logger = logging.getLogger('reactopya')
 
@@ -19,7 +20,7 @@ class _BaseWidget:
     def __init__(self, WidgetOrig, widget_type, project_name, *args, **kwargs):
         self._project_name = project_name
         self._widget_type = widget_type
-        self._props = _json_serialize(dict(**kwargs))
+        self._props = dict(**kwargs)
         self._children = {}
         self._child_ids = []
         for i, ch in enumerate(list(args)):
@@ -70,7 +71,6 @@ class _BaseWidget:
     
     def _handle_send_custom_message(self, message):
         logger.info('WIDGET:%s:_handle_send_custom_message', self._widget_type)
-        message = _json_serialize(message)
         if self._reactopya_widget:
             self._reactopya_widget.send_custom_message(message)
         if self._running_process:
@@ -90,6 +90,7 @@ class _BaseWidget:
     
     # internal function to send message to javascript component
     def _send_message_to_parent_process(self, msg):
+        msg = reactopya_serialize(msg)
         import simplejson
         txt = simplejson.dumps(msg, ignore_nan=True)
         msg_path = os.path.join(self._run_process_mode_dirpath, '{}.msg-from-python'.format(self._run_process_mode_message_index))
@@ -101,10 +102,6 @@ class _BaseWidget:
             print('WARNING: unable to write file: {}'.format(msg_path))
 
     def _handle_javascript_state_changed(self, state):
-        for key in state:
-            val = state[key]
-            if (type(val) == str) and (val.startswith('@reactopya-python-object@')):
-                state[key] = _object_registry['objects'][val]
         logger.info('WIDGET:%s:_handle_javascript_state_changed: %s %s', self._widget_type, state, self._children.keys())
         if '_childId' in state:
             child_id = str(state['_childId'])
@@ -155,14 +152,14 @@ class _BaseWidget:
             project_name=self._project_name,
             type=self._widget_type,
             children=children_serialized,
-            props=_json_serialize(self._props),
+            props=reactopya_serialize(self._props),
             is_dynamic_child=self._is_dynamic_child,
             child_id=child_id
         )
         if include_javascript_state:
-            obj['javascript_state'] = _json_serialize(self._javascript_state)
+            obj['javascript_state'] = reactopya_serialize(self._javascript_state)
         if include_python_state:
-            obj['python_state'] = _json_serialize(self._python_state)
+            obj['python_state'] = reactopya_serialize(self._python_state)
         if include_bundle_fname:
             dirname = os.path.dirname(os.path.realpath(__file__))
             obj['bundle_fname'] = os.path.join(dirname, 'dist', 'bundle.js')
@@ -264,6 +261,7 @@ class _BaseWidget:
                 fname = os.path.join(dirname, file)
                 with open(fname, 'r') as f:
                     msg = simplejson.load(f)
+                msg = reactopya_deserialize(msg)
                 messages.append(msg)
                 os.remove(fname)
                 break  # only one at a time for now
@@ -308,7 +306,7 @@ class _BaseWidget:
             self._quit = True
         else:
             print(msg)
-            raise Exception('Unexpected message in _handle_message_process_mode', msg['name'])
+            raise Exception('Unexpected message in _handle_message_process_mode: {}'.format(msg['name']))
 
     def export_snapshot(self, output_fname, *, format, use_python_backend_websocket=False, session_id=''):
         import simplejson
@@ -366,19 +364,23 @@ class _BaseWidget:
     <span>Loading html file...</span>
     <script type="text/javascript">
 
-var snapshot = get_snapshot_json_b64();
-snapshot = JSON.parse(atob(snapshot));
-for (let js of snapshot.project_bundles) {
-    eval(js);
+function _initialize() {
+    var snapshot = get_snapshot_json_b64();
+    snapshot = JSON.parse(atob(snapshot));
+    for (let js of snapshot.project_bundles) {
+        eval(js);
+    }
+    window.snapshot=snapshot;
+
+    var sw = snapshot.serialized_widget;
+    let model = create_reactopya_model(sw);
+    attach_reactopya_model(sw, model);
+    // set_init_state_on_props(sw);
 }
-window.snapshot=snapshot;
 
 {{ ReactopyaModelCode }}
 
-var sw = snapshot.serialized_widget;
-let model = create_reactopya_model(sw);
-attach_reactopya_model(sw, model);
-// set_init_state_on_props(sw);
+_initialize();
 
 const verbose = false;
 
@@ -603,69 +605,6 @@ def _get_project_bundle_fnames(serialized_widget):
 def _read_text_file(fname):
     with open(fname, 'r') as f:
         return f.read()
-
-
-def _listify_ndarray(x):
-    if x.ndim == 1:
-        if np.issubdtype(x.dtype, np.integer):
-            return [int(val) for val in x]
-        else:
-            return [float(val) for val in x]
-    elif x.ndim == 2:
-        ret = []
-        for j in range(x.shape[1]):
-            ret.append(_listify_ndarray(x[:, j]))
-        return ret
-    elif x.ndim == 3:
-        ret = []
-        for j in range(x.shape[2]):
-            ret.append(_listify_ndarray(x[:, :, j]))
-        return ret
-    elif x.ndim == 4:
-        ret = []
-        for j in range(x.shape[3]):
-            ret.append(_listify_ndarray(x[:, :, :, j]))
-        return ret
-    else:
-        raise Exception('Cannot listify ndarray with {} dims.'.format(x.ndim))
-
-_object_registry = dict(
-    objects=dict()
-)
-
-def _json_serialize(x):
-    import numpy as np
-    if isinstance(x, np.ndarray):
-        return _listify_ndarray(x)
-    elif isinstance(x, np.integer):
-        return int(x)
-    elif isinstance(x, np.floating):
-        return float(x)
-    elif type(x) == dict:
-        ret = dict()
-        for key, val in x.items():
-            ret[key] = _json_serialize(val)
-        return ret
-    elif type(x) == list:
-        ret = []
-        for i, val in enumerate(x):
-            ret.append(_json_serialize(val))
-        return ret
-    elif _is_jsonable(x):
-        return x
-    else:
-        code = '@reactopya-python-object@' + uuid.uuid4().hex.upper()
-        _object_registry['objects'][code] = x
-        return code
-
-
-def _is_jsonable(x):
-    import simplejson
-    try:
-        simplejson.dumps(x)
-        return True
-    except:
-        return False
 
 def write_text_file(fname, txt):
     with open(fname, 'w') as f:

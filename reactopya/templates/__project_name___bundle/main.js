@@ -69,9 +69,9 @@ class ChildWrapper extends Component {
 }
  
 function _create_element(type, children, props, key, reactopyaModel, opts) {
-    console.log(widgetsByType);
     children = children || [];
     props = props || {};
+    props = ReactopyaModel.reactopya_deserialize(props);
     key = key || undefined;
     opts = opts || {};
     let Comp = widgetsByType[type];

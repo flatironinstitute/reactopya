@@ -34,7 +34,7 @@ class ReactopyaComponent:
         changed_state = dict()
         for key in state:
             if _different(state[key], self._python_state.get(key)):
-                changed_state[key] = _json_serialize(state[key])
+                changed_state[key] = state[key]
         if changed_state:
             for key in changed_state:
                 self._python_state[key] = changed_state[key]
@@ -100,47 +100,3 @@ def deepcopy2(x):
 
 def _different(a, b):
     return a is not b
-
-def _listify_ndarray(x):
-    if x.ndim == 1:
-        if np.issubdtype(x.dtype, np.integer):
-            return [int(val) for val in x]
-        else:
-            return [float(val) for val in x]
-    elif x.ndim == 2:
-        ret = []
-        for j in range(x.shape[1]):
-            ret.append(_listify_ndarray(x[:, j]))
-        return ret
-    elif x.ndim == 3:
-        ret = []
-        for j in range(x.shape[2]):
-            ret.append(_listify_ndarray(x[:, :, j]))
-        return ret
-    elif x.ndim == 4:
-        ret = []
-        for j in range(x.shape[3]):
-            ret.append(_listify_ndarray(x[:, :, :, j]))
-        return ret
-    else:
-        raise Exception('Cannot listify ndarray with {} dims.'.format(x.ndim))
-
-def _json_serialize(x):
-    if isinstance(x, np.ndarray):
-        return _listify_ndarray(x)
-    elif isinstance(x, np.integer):
-        return int(x)
-    elif isinstance(x, np.floating):
-        return float(x)
-    elif type(x) == dict:
-        ret = dict()
-        for key, val in x.items():
-            ret[key] = _json_serialize(val)
-        return ret
-    elif type(x) == list:
-        ret = []
-        for i, val in enumerate(x):
-            ret.append(_json_serialize(val))
-        return ret
-    else:
-        return x

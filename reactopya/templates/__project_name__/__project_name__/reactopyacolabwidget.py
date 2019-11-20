@@ -4,6 +4,7 @@ from IPython.display import Javascript, clear_output
 import simplejson
 import base64
 import sys
+from .reactopya_serialize import reactopya_serialize, reactopya_deserialize
 
 class ReactopyaColabWidget:
     def __init__(self, *, project_name, type, initial_children, props, key=''):
@@ -47,13 +48,13 @@ class ReactopyaColabWidget:
     def set_python_state(self, state):
         self._send_message_to_js(dict(
             name='setPythonState',
-            state=_json_serialize(state)
+            state=state
         ))
     
     def send_custom_message(self, message):
         self._send_message_to_js(dict(
             name='customMessage',
-            message=_json_serialize(message)
+            message=message
         ))
     
     def on_javascript_state_changed(self, handler):
@@ -131,7 +132,6 @@ class ReactopyaColabWidget:
                 let div = document.createElement('div');
                 document.querySelector("#output-area").appendChild(div);
 
-
                 const project_name = '[project_name]';
                 const type = '[type]';
                 let props = JSON.parse(atob('[props_json_b64]'));
@@ -157,9 +157,9 @@ class ReactopyaColabWidget:
             js_code = js_code.replace('[project_name]', self._project_name)
             js_code = js_code.replace('[type]', self._type)
             js_code = js_code.replace('[props_json_b64]', base64.b64encode(
-                simplejson.dumps(self._props, ignore_nan=True).encode('utf-8')).decode())
+                simplejson.dumps(reactopya_serialize(self._props), ignore_nan=True).encode('utf-8')).decode())
             js_code = js_code.replace('[initial_children_json_b64]', base64.b64encode(
-                simplejson.dumps(self._initial_children, ignore_nan=True).encode('utf-8')).decode())
+                simplejson.dumps(reactopya_serialize(self._initial_children), ignore_nan=True).encode('utf-8')).decode())
             js_code = js_code.replace('[key]', self._key)
             js_code = js_code.replace('[js_model_injection]', self._js_model_injection())
             display(Javascript(js_code))
@@ -202,53 +202,9 @@ class ReactopyaColabWidget:
         '''
         js_code = js_code.replace('[model_id]', self._model_id)
         js_code = js_code.replace('[msg_json_b64]', base64.b64encode(
-            simplejson.dumps(msg, ignore_nan=True).encode('utf-8')).decode())
+            simplejson.dumps(reactopya_serialize(msg), ignore_nan=True).encode('utf-8')).decode())
         display(Javascript(js_code))
 
     def _on_change(self, change):
         # maybe sometime we'll handle the case of changing props
         pass
-
-def _listify_ndarray(x):
-    if x.ndim == 1:
-        if np.issubdtype(x.dtype, np.integer):
-            return [int(val) for val in x]
-        else:
-            return [float(val) for val in x]
-    elif x.ndim == 2:
-        ret = []
-        for j in range(x.shape[1]):
-            ret.append(_listify_ndarray(x[:, j]))
-        return ret
-    elif x.ndim == 3:
-        ret = []
-        for j in range(x.shape[2]):
-            ret.append(_listify_ndarray(x[:, :, j]))
-        return ret
-    elif x.ndim == 4:
-        ret = []
-        for j in range(x.shape[3]):
-            ret.append(_listify_ndarray(x[:, :, :, j]))
-        return ret
-    else:
-        raise Exception('Cannot listify ndarray with {} dims.'.format(x.ndim))
-
-def _json_serialize(x):
-    if isinstance(x, np.ndarray):
-        return _listify_ndarray(x)
-    elif isinstance(x, np.integer):
-        return int(x)
-    elif isinstance(x, np.floating):
-        return float(x)
-    elif type(x) == dict:
-        ret = dict()
-        for key, val in x.items():
-            ret[key] = _json_serialize(val)
-        return ret
-    elif type(x) == list:
-        ret = []
-        for i, val in enumerate(x):
-            ret.append(_json_serialize(val))
-        return ret
-    else:
-        return x

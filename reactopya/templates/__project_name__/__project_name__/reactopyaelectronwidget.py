@@ -6,6 +6,7 @@ import shutil
 import os
 import numpy as np
 from .shellscript import ShellScript
+from .reactopya_serialize import reactopya_serialize, reactopya_deserialize
 
 logger = logging.getLogger('reactopya')
 
@@ -71,14 +72,14 @@ class ReactopyaElectronWidget:
     def set_python_state(self, state):
         msg = dict(
             name='setPythonState',
-            state=_json_serialize(state)
+            state=state
         )
         self._process.sendMessage(msg)
 
     def send_custom_message(self, message):
         msg = dict(
             name='customMessage',
-            message=_json_serialize(message)
+            message=message
         )
         self._process.sendMessage(msg)
     
@@ -96,7 +97,7 @@ class ReactopyaElectronWidget:
             project_name=self._project_name,
             type=self._type,
             children=[self._children[id]._serialize(child_id=id) for id in self._child_ids],
-            props=self._props,
+            props=reactopya_serialize(self._props),
             key=self._key,
             child_id=child_id,
             model_id=self._model_id
@@ -117,6 +118,7 @@ class ReactopyaElectronWidget:
             for handler in self._add_child_handlers:
                 handler(data)
         else:
+            print(msg)
             raise Exception('Unexpected message name: {}'.format(name))
 
 
@@ -146,6 +148,7 @@ class ElectronProcess:
             for handler in self._message_handlers:
                 handler(msg)
     def sendMessage(self, msg):
+        msg = reactopya_serialize(msg)
         self._message_index = self._message_index + 1
         write_py_message(self._message_dir, self._message_index, msg)
     def onMessage(self, handler):
@@ -160,56 +163,13 @@ def write_py_message(dirname, message_index, msg):
 def take_js_messages(dirname):
     messages = []
     files = os.listdir(dirname)
-    files = sorted(files);
+    files = sorted(files)
     for file in files:
         if file.endswith('.js.msg'):
             fname = os.path.join(dirname, file)
             with open(fname, 'r') as f:
                 msg = simplejson.load(f)
+            msg = reactopya_deserialize(msg)
             messages.append(msg)
             os.remove(fname)
     return messages
-
-def _listify_ndarray(x):
-    if x.ndim == 1:
-        if np.issubdtype(x.dtype, np.integer):
-            return [int(val) for val in x]
-        else:
-            return [float(val) for val in x]
-    elif x.ndim == 2:
-        ret = []
-        for j in range(x.shape[1]):
-            ret.append(_listify_ndarray(x[:, j]))
-        return ret
-    elif x.ndim == 3:
-        ret = []
-        for j in range(x.shape[2]):
-            ret.append(_listify_ndarray(x[:, :, j]))
-        return ret
-    elif x.ndim == 4:
-        ret = []
-        for j in range(x.shape[3]):
-            ret.append(_listify_ndarray(x[:, :, :, j]))
-        return ret
-    else:
-        raise Exception('Cannot listify ndarray with {} dims.'.format(x.ndim))
-
-def _json_serialize(x):
-    if isinstance(x, np.ndarray):
-        return _listify_ndarray(x)
-    elif isinstance(x, np.integer):
-        return int(x)
-    elif isinstance(x, np.floating):
-        return float(x)
-    elif type(x) == dict:
-        ret = dict()
-        for key, val in x.items():
-            ret[key] = _json_serialize(val)
-        return ret
-    elif type(x) == list:
-        ret = []
-        for i, val in enumerate(x):
-            ret.append(_json_serialize(val))
-        return ret
-    else:
-        return x

@@ -50,6 +50,7 @@ class ReactopyaModel {
             this._childModels[state._childId + ''].setPythonState(state.state);
             return;
         }
+        state = _reactopya_deserialize(state);
         this._setStateHelper(state, this._pythonStateStringified, this._pythonStateChangedHandlers);
     }
     setJavaScriptState(state) {
@@ -58,7 +59,7 @@ class ReactopyaModel {
     getPythonState() {
         let ret = {};
         for (let key in this._pythonStateStringified) {
-            ret[key] = JSON.parse(this._pythonStateStringified[key]);
+            ret[key] = _reactopya_deserialize(JSON.parse(this._pythonStateStringified[key]));
         }
         return ret;
     }
@@ -178,6 +179,7 @@ class ReactopyaModel {
             this._childModels[message._childId + ''].handleCustomMessage(message.message);
             return;
         }
+        message = _reactopya_deserialize(message);
         for (let handler of this._customMessageHandlers) {
             handler(message);
         }
@@ -201,5 +203,81 @@ class ReactopyaModel {
         }
     }
 }
+
+function _reactopya_deserialize(x) {
+    if (Array.isArray(x)) {
+        let ret = [];
+        for (let i in x) {
+            ret.push(_reactopya_deserialize(x[i]));
+        }
+        return ret;
+    }
+    else if (typeof(x) == 'object') {
+        if ((x._reactopya_type) && (x._reactopya_type === '@reactopya-ndarray@')) {
+            return _reactopya_deserialize_ndarray(x);
+        }
+        else {
+            let ret = {};
+            for (let k in x) {
+                ret[k] = _reactopya_deserialize(x[k]);
+            }
+            return ret;
+        }
+    }
+    else {
+        return x;
+    }
+}
+
+function _reactopya_deserialize_ndarray(x) {
+    window.debug_x = x;
+    let TA
+    if (x.dtype == 'float64') {
+        TA = Float64Array;
+    }
+    else if (x.dtype == 'float32') {
+        TA = Float32Array;
+    }
+    else if (x.dtype == 'int32') {
+        TA = Int32Array;
+    }
+    else if (x.dtype == 'int16') {
+        TA = Int16Array;
+    }
+    else if (x.dtype == 'uint32') {
+        TA = Uint32Array;
+    }
+    else if (x.dtype == 'uint16') {
+        TA = Uint32Array;
+    }
+    else {
+        throw new Error(`Datatype not yet supported in _reactopya_deserialize_ndarray: ${x.dtype}`);
+    }
+    let data_1d = new TA(Uint8Array.from(atob(x.data_b64), c => c.charCodeAt(0)).buffer);
+    return _make_ndarray(x.shape, data_1d);
+}
+
+function _make_ndarray(shape, data_1d) {
+    let prod_shape = 1;
+    for (let i in shape) prod_shape *= shape[i];
+    if (prod_shape != data_1d.length) {
+        console.warn('shape = ', shape);
+        throw new Error(`Unexpected size of data ${prod_shape} != ${data_1d.length}`);
+    }
+    if (shape.length === 1) {
+        return data_1d;
+    }
+    else {
+        let ret = [];
+        let stride = 1;
+        for (let i = 1; i < shape.length; i++) stride *= shape[i];
+        for (let i = 0; i < prod_shape; i += stride) {
+            ret.push(_make_ndarray(shape.slice(1), data_1d.slice(i, i + stride)));
+        }
+        return ret;
+    }
+}
+
+ReactopyaModel.reactopya_deserialize = _reactopya_deserialize;
 
 module.exports = ReactopyaModel;
