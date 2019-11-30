@@ -93,8 +93,59 @@ reactopya install
 
 Now you should be able to use the widgets you developed in any of the following contexts:
 
+* Jupyter lab
 * Jupyter notebook
 * Colab notebook
 * Desktop application (electron)
 * Hosted server (reactopya-server)
 
+## To use in JupyterLab or Jupyter Notebook
+
+Some additional one-time installation steps are needed to be able to use reactopya widgets within jupyter lab or jupyter notebook. Those instructions are automatically generated in the `generated/docs` folder. You should look there for the most up-to-date instructions. But in brief, do the following:
+
+You will need to first install jupyterlab unless you have it from a different place: pip install jupyterlab
+
+If you haven't already done so, install the  following extension (from npm):
+
+```
+jupyter labextension install @jupyter-widgets/jupyterlab-manager
+```
+
+Next, install the the latest reactopya_jup Python package:
+
+```
+pip install --upgrade reactopya_jup==0.9.1
+```
+
+For JupyterLab, install the lab extension:
+
+```
+jupyter labextension install reactopya_jup@0.9.1
+```
+
+For Jupyter Notebook, install and enable the notebook extension:
+
+```
+jupyter nbextension install --sys-prefix --py reactopya_jup
+jupyter nbextension enable reactopya_jup --py --sys-prefix
+```
+
+Now in a jupyter lab notebook:
+
+```
+% First cell 
+import HelloWorld as hw
+hw.init_jupyter()
+
+% Second cell
+W = hw.HelloWidget()
+W.show()
+```
+
+## To publish on PyPI
+
+```
+reactopya publish-pypi
+```
+
+You will be prompted to enter your PyPI user name and password.
