@@ -1,0 +1,10 @@
+{
+    "project_name": "HelloWorld",
+    "version": "0.1.0",
+    "description": "A hello-world intro project for reactopya",
+    "author": "Jeremy Magland",
+    "license": "Apache-2.0",
+    "setup_py": {
+        "install_requires": []
+    }
+}

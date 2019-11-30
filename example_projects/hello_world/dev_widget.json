@@ -1,0 +1,6 @@
+{
+    "widget": {
+        "type": "HelloWidget",
+        "props": {}
+    }
+}

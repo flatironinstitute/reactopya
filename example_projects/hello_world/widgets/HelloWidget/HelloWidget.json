@@ -1,0 +1,6 @@
+{
+    "project_name": "HelloWorld",
+    "type": "HelloWidget",
+    "description": "An example reactopya widget",
+    "defaultProps": {}
+}

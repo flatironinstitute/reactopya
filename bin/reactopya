@@ -283,7 +283,7 @@ def _append_text_file(fname, txt):
 
 def _install_all(config, args):
     _install_dev(config, args)
-    _install_jupyter(config, args)
+    _install(config, args)
     _install_server(config, args)
 
 def _install(config, args):
