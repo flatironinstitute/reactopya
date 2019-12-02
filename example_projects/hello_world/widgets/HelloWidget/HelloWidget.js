@@ -9,8 +9,10 @@ export default class HelloWidget extends Component {
         super(props);
         this.state = {
             // javascript state
+            x: 0,
             
             // python state
+            output: '',
             status: '',
             status_message: ''
         }
@@ -24,7 +26,7 @@ export default class HelloWidget extends Component {
         });
         // Use this.pythonInterface.setState(...) to pass data to the python backend
         this.pythonInterface.setState({
-            test: 1
+            x: 1
         });
     }
     componentWillUnmount() {
@@ -33,7 +35,12 @@ export default class HelloWidget extends Component {
     render() {
         return (
             <RespectStatus {...this.state}>
-                <div>Render HelloWidget here (test edit)</div>
+                <div>
+                    <h3>Hello, world.</h3>
+                    <p>
+                        Output from Python: <pre>{this.state.output}</pre>
+                    </p>
+                </div>
             </RespectStatus>
         )
     }

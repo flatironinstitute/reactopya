@@ -9,12 +9,20 @@ class HelloWidget:
         # The state argument contains the state set from the javacript code
         # In .js file, use this.pythonInterface.setState({...})
 
+        x = state.get('x', None)
+        self._set_state(
+            output='The value of x is {}'.format(x)
+        )
+
         self._set_status('finished', 'Finished HelloWidget')
 
     def on_message(self, msg):
         # process custom messages from JavaScript here
         # In .js file, use this.pythonInterface.sendMessage({...})
-        pass
+        self._send_message(dict(
+            name='message_received',
+            msg=msg
+        ))
     
     # Send a custom message to JavaScript side
     # In .js file, use this.pythonInterface.onMessage((msg) => {...})
