@@ -480,6 +480,10 @@ def _generate_directory(template_source_path, dest_path, config, args, do_render
     if len(fnames) == 1 and fnames[0] == '.widgets_go_here':
         return _generate_directory('widgets', dest_path, config, args=args, do_render=False)
     
+    if len(fnames) == 1 and fnames[0] == '.scripts_go_here':
+        if os.path.exists('bin'):
+            return _generate_directory('bin', dest_path, config, args=args, do_render=False)
+    
     if len(fnames) == 1 and fnames[0] == '.reactopya_common_goes_here':
         return _generate_directory(os.path.join(reactopya_templates_directory(), '_other', 'reactopya_common'), dest_path, config, args=args, do_render=do_render)
 

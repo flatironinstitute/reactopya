@@ -78,23 +78,11 @@ import {{ project_name }}
 {{ project_name }}.init_electron()
 ```
 
-or you can launch a widget from a .json file via:
-
-```
-{{ project_name }} show --widget [file.json]
-```
-
 See the desktop_examples directory which might exist at the root of this repository.
 
 ## Web server
 
-To host a {{ project_name }} widget as a web server, simply create the widget in a Python script and then run:
-
-```
-widget.host(port=6065)
-```
-
-where 6065 may be replaced by any open port. Then you can view the widget in your browser by navigating to `http://localhost:6065`. There may be examples of this in the desktop_examples/ directory.
+See the reactopya documentation for how to do this (and file an issue of the docs aren't present).
 
 ## Google colaboratory
 

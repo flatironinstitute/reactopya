@@ -8,11 +8,15 @@ setuptools.setup(
     author="{{ author }}",
     description="{{ description }}",
     packages=setuptools.find_packages(),
-    scripts=['bin/{{ project_name }}'],
     include_package_data=True,
     install_requires=[
         'simplejson',
         {% for value in setup_py.install_requires -%}
+        '{{ value }}'{%- if not loop.last %},{% endif %}
+        {% endfor -%}
+    ],
+    scripts=[
+        {% for value in setup_py.scripts -%}
         '{{ value }}'{%- if not loop.last %},{% endif %}
         {% endfor -%}
     ],
