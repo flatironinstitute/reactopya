@@ -66,7 +66,7 @@ This package is used by the following WIP reactopya projects that may serve as e
 * [ccm_widgets](https://github.com/flatironinstitute/ccm_widgets)
 * [kachery_widgets](https://github.com/flatironinstitute/kachery/kachery_widgets)
 
-The easiest way to start a new reactoypa project from scratch is via the following convenience command-line operations:
+The easiest way to start a new reactopya project from scratch is via the following convenience command-line operations:
 
 ```bash
 > mkdir FirstProject
@@ -100,7 +100,7 @@ Here is an example `reactopya.config.json` file:
 {
     "project_name": "first-reactopya-project",
     "version": "0.1.0",
-    "description": "An example reactoypa project",
+    "description": "An example reactopya project",
     "author": "Jeremy Magland",
     "license": "Apache-2.0",
     "setup_py": {
