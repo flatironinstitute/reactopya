@@ -30,15 +30,15 @@ Since we do not want to maintain a separate set of GUI components for the notebo
 
 In terms of languages, JavaScript is the probably the best choice for creating rich, interactive GUI components. In fact, if we want our widgets to display equivalently in the browser, notebook, and desktop, then JavaScript is pretty much our only choice. Nevertheless, from a computational and data management perspective, Python is much more powerful (think Numpy and the many third party libraries invaluable for data science). Therefore, our widget components should pair JavaScript with Python in an intuitive manner. Since there are many different ways that JavaScript and Python can communicate with one another, the challenge is to decide how to structure our JavaScript/Python widgets in a manner that is independent of the mechanism for this communication.
 
-One way that JavaScript and Python can coexist is via Jupyter widgets which are displayed in notebooks. The Jupyter framework handles communication between the client (JavaScript running in the browser) and the server (Python running in a runtime kernel). Jupyter provides a mechanism for developing notebook extensions that may be installed on the machine that runs the Jupyter kernel and notebook server.
+One way that JavaScript and Python can coexist is via [Jupyter widgets](https://jupyter.org/widgets) which are displayed in notebooks. The Jupyter framework handles communication between the client (JavaScript running in the browser) and the server (Python running in a runtime kernel). Jupyter provides a mechanism for developing notebook extensions that may be installed on the machine that runs the Jupyter kernel and notebook server.
 
 While we certainly want our Jupyter/Python widgets to be able to function as Jupyter widgets, we also want to incorporate our widgets within standalone web applications as well as desktop software running on a local machine. This requires a different type of communication between JavaScript and Python. One difference is that in a notebook environment, Python is the control language; that is, we instantiate a widget in Python and pass parameters to that widget within a notebook cell. On the other hand, in a standalone web or desktop application, the primary language is JavaScript, and the component needs to be created by passing widget parameters to a web component in JavaScript. In the context of a web application, an IPython kernel is not necessarily the right choice, partly because we need to support anonymous visitors to the website. For desktop applications, we may want to bypass the client/server infrastructure altogether and allow the JavaScript to call the Python routines directly.
 
 Thus it is crucial that we define our widgets in a sufficiently general way so that we may deploy in these different settings without needing to modify the original source code.
 
-ReactJS is a popular, modern framework for creating JavaScript components that are modular, reusable, and may be fit together like lego pieces. Aside from the modularity advantage there are many other reasons to use React including its performance and the plethora of third party libraries and development tools available. It is a natural choice for our application. The question is, how can we define a React component such that it can also communicate with the Python backend.
+ReactJS is a popular, modern framework for creating JavaScript components that are modular, reusable, and may be fit together like Lego pieces. Aside from the modularity advantage there are many other reasons to use React including its performance and the plethora of third party libraries and development tools available. It is a natural choice for our application. The question is, how can we define a React component such that it can also communicate with the Python backend.
 
-In Reactopya this is done by bundling a companion Python class with each React component, and allowing shared access to a subset of the component's state variables. This integrates nicely with React's rendering system since the appearance of a component is supposed to be determined only by its properties (props) and state variables. Whenever one of these is modified, the component is automatically re-rendered by the the Lifecycle system of React.
+In Reactopya this is done by bundling a companion Python class with each React component, and allowing shared access to a subset of the component's state variables. This integrates nicely with React's rendering system since the appearance of a component is supposed to be determined only by its properties (props) and state variables. Whenever one of these is modified, the component is automatically re-rendered by the Lifecycle system of React.
 
 A Reactopya component is defined by the following files (and perhaps others):
 
@@ -78,7 +78,7 @@ The easiest way to start a new reactopya project from scratch is via the followi
 # answer the questions
 ```
 
-Reactoypa will create the necessary files. The structure of a reactopya project is as follows:
+Reactopya will create the necessary files. The structure of a reactopya project is as follows:
 
 ```
 reactopya.config.json
