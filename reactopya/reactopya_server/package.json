@@ -1,5 +1,5 @@
 {
-    "name": "reactoypa_server",
+    "name": "reactopya_server",
     "version": "0.1.1",
     "main": "server/main.js",
     "license": "Apache-2.0",
