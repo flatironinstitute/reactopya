@@ -1,6 +1,6 @@
+let express;
 try {
-    const express = require('express');
-    const ReactopyaServer = require('./ReactopyaServer');
+    express = require('express');
 }
 catch(err) {
     console.error('Unable to import express or another package.');
@@ -8,6 +8,7 @@ catch(err) {
     console.error('npm install -g express ws tmp');
     return;
 }
+const ReactopyaServer = require('./ReactopyaServer');
 
 var app = express();
 
@@ -22,6 +23,5 @@ console.info(`Reactopya server is listening on port ${port}`);
 
 const WSS = new ReactopyaServer();
 WSS.start({server: server});
-
 
 

@@ -6,12 +6,9 @@
     "license": "{{ license }}",
     "main": "src/index.js",
     "scripts": {
-      "dev": "echo \"starting development server\" && webpack-dev-server --hot",
+      "dev": "echo \"starting development server\" && concurrently --kill-others \"webpack-dev-server --hot\" \"PORT=5051 node server-dev/index.js\" \"cd ../.. && reactopya watch --interval 2\"",
       "chrome": "echo \"Opening as app in chrome. This should be used with yarn dev.\" && google-chrome --app=http://localhost:5050",
-      "build": "echo \"building bundle\" && NODE_OPTIONS=--max_old_space_size=4096 webpack --devtool source-map",
-      "start": "echo \"starting server\" && node server/index.js",
-      "electron-dev": "concurrently --kill-others \"yarn dev\" \"sleep 2 && cd electron && yarn start\"",
-      "install-electron": "echo \"installing electron\" && cd electron && yarn install"
+      "build": "echo \"building bundle\" && NODE_OPTIONS=--max_old_space_size=4096 webpack --devtool source-map"
     },
     "dependencies": {
       "@hot-loader/react-dom": "^16.8.6",

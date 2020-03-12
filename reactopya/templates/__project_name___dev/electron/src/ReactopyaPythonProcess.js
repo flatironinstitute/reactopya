@@ -2,6 +2,15 @@ const { spawn } = require('child_process');
 
 const fs = require('fs');
 const tmp = require('tmp');
+let btoa_ = null;
+console.log(typeof btoa);
+if ((typeof btoa) !== 'undefined') {
+    console.log(typeof btoa);
+    btoa_ = btoa;
+}
+else {
+    btoa_ = function(str){ return Buffer.from(str).toString('base64'); }
+}
 
 function ReactopyaPythonProcess(projectName, type, initialChildren, props, onReceiveMessage) {
     let that = this;
@@ -10,9 +19,9 @@ function ReactopyaPythonProcess(projectName, type, initialChildren, props, onRec
     let m_process = null;
 
     this.start = function() {
-        m_tmpDir = tmp.dirSync({ template: 'tmp-reactopya-XXXXXX'});;
+        m_tmpDir = tmp.dirSync({ template: '/tmp/tmp-reactopya-XXXXXX'});;
 
-        let initial_children_json_b64 = btoa(JSON.stringify(initialChildren));
+        let initial_children_json_b64 = btoa_(JSON.stringify(initialChildren));
         let pythonCode = '';
         pythonCode = pythonCode + `import json` + '\n'
         pythonCode = pythonCode + `import base64` + '\n'

@@ -21,7 +21,7 @@ function parse_url_params() {
 const main = () => {
     if (!window.using_electron) {
         window.reactopya_client = new ReactopyaClient();
-        window.reactopya_client.connect(`ws://${window.location.host}`);
+        window.reactopya_client.connect(`ws://${window.location.hostname}:5051`);
     }
 
     setTimeout(function() {

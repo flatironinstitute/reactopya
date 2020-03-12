@@ -58,7 +58,7 @@ def main():
         {
             'name': 'start-dev',
             'func': _start_dev,
-            'description': 'Start the electron application in development mode (use install-dev first). This also calls "reactopya watch" in the background.'
+            'description': 'Start the server in development mode (use install-dev first). This also calls "reactopya watch" in the background.'
         },
         {
             'name': 'install',
@@ -102,6 +102,7 @@ def main():
         description="Reactopya command-line utility", formatter_class=RawTextHelpFormatter)
     parser.add_argument(
         'command', help='One of the following:\n\n{}\n'.format(command_description))
+    parser.add_argument('--interval', help="Applies to watch command", required=False, default="5")
     parser.add_argument('--verbose', action='store_true', help='Turn on verbose output')
 
     args = parser.parse_args()
@@ -181,9 +182,8 @@ def _install_dev(config, args):
         set -ex
         cd generated/{project_name}_dev
         yarn install
-        yarn install-electron
         cd ../{project_name}
-        pip install -e .
+        pip install -e --no-deps .
     '''.format(project_name=config['project_name'])
     shell_cmd = ShellScript(cmd)
     shell_cmd.start()
@@ -199,28 +199,18 @@ def _install_dev(config, args):
 def _start_dev(config, args):
     _generate(config=config, args=args)
 
-    watch_cmd = ShellScript('''
+    cmd = '''
         #!/bin/bash
-        reactopya watch
-    ''')
-    watch_cmd.start()
-
-    try:
-        cmd = '''
-            #!/bin/bash
-            set -ex
-            cd generated/{project_name}_dev
-            yarn electron-dev
-        '''.format(project_name=config['project_name'])
-        shell_cmd = ShellScript(cmd)
-        shell_cmd.start()
-        retcode = shell_cmd.wait()
-        if retcode != 0:
-            raise Exception(
-                'Shell script exited with non-zero return code: {}'.format(retcode))
-    finally:
-        if os.path.exists('_watching'):
-            os.unlink('_watching')
+        set -ex
+        cd generated/{project_name}_dev
+        yarn dev
+    '''.format(project_name=config['project_name'])
+    shell_cmd = ShellScript(cmd)
+    shell_cmd.start()
+    retcode = shell_cmd.wait()
+    if retcode != 0:
+        raise Exception(
+            'Shell script exited with non-zero return code: {}'.format(retcode))
 
 
 def _install_server(config, args):
@@ -386,7 +376,7 @@ def _watch(config, args):
         except:
             traceback.print_exc()
             print('Error generating code')
-        time.sleep(5)
+        time.sleep(int(args.interval))
 
 def _clean(config, args):
     shutil.rmtree('generated')
