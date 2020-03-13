@@ -23,11 +23,14 @@ class IncomingConnection {
                 }
             });
             messageFiles.sort();
+            let timer = new Date();
             for (let msgFile of messageFiles) {
                 let msg = read_json_file(`${this._dir}/${msgFile}`);
                 fs.unlinkSync(`${this._dir}/${msgFile}`);
                 this._sendMessage({message_type: 'from_python_process', message: msg});
-                // break; // only one at a time for now
+                let elapsed_sec = ((new Date()) - timer)/1000;
+                if (elapsed_sec > 0.2)
+                    break; // come back later for more processing
             }
         }
         catch(err) {

@@ -215,6 +215,9 @@ class _BaseWidget:
         self._reactopya_widget.on_add_child(
             self._handle_add_child_data
         )
+        self._reactopya_widget.on_iterate(
+            self._iterate_component
+        )
 
         return self._reactopya_widget.show(**kwargs)
     
@@ -239,10 +242,15 @@ class _BaseWidget:
             for msg in messages:
                 self._handle_message_process_mode(msg)
         else:
-            self._component.iterate()
+            self._iterate_component()
         if self._quit:
             return False
         return True
+    
+    def _iterate_component(self):
+        self._component.iterate()
+        for _, ch in self._children.items():
+            ch._iterate_component()
             
     def _start_process_mode(self, dirpath):
         self._run_process_mode_dirpath = dirpath
@@ -256,6 +264,7 @@ class _BaseWidget:
         messages = []
         files = os.listdir(dirname)
         files = sorted(files)
+        timer = time.time()
         for file in files:
             if file.endswith('.msg-from-js'):
                 fname = os.path.join(dirname, file)
@@ -264,7 +273,9 @@ class _BaseWidget:
                 msg = reactopya_deserialize(msg)
                 messages.append(msg)
                 os.remove(fname)
-                break  # only one at a time for now
+                elapsed = time.time() - timer
+                if elapsed > 0.2:
+                    break # come back later
         return messages
 
     

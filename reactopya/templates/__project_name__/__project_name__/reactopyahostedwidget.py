@@ -30,6 +30,7 @@ class ReactopyaHostedWidget:
         self._props = props
         self._key = key
         self._javascript_state_changed_handlers = []
+        self._iterate_handlers = []
         self._custom_message_handlers = []
         self._add_child_handlers = []
         self._message_index = 100000
@@ -73,6 +74,9 @@ class ReactopyaHostedWidget:
     def on_javascript_state_changed(self, handler):
         self._javascript_state_changed_handlers.append(handler)
     
+    def on_iterate(self, handler):
+        self._iterate_handlers.append(handler)
+    
     def on_custom_message(self, handler):
         self._custom_message_handlers.append(handler)
     
@@ -85,6 +89,8 @@ class ReactopyaHostedWidget:
         messages = take_js_messages(self._session_dir)
         for msg in messages:
             self._handle_message(msg)
+        for h in self._iterate_handlers:
+            h()
     
     def _handle_message(self, msg):
         # handle message from javascript
