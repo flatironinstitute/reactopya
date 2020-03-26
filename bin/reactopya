@@ -183,7 +183,7 @@ def _install_dev(config, args):
         cd generated/{project_name}_dev
         yarn install
         cd ../{project_name}
-        pip install -e --no-deps .
+        pip install --no-deps -e .
     '''.format(project_name=config['project_name'])
     shell_cmd = ShellScript(cmd)
     shell_cmd.start()
